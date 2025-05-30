@@ -1,0 +1,304 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/white">
+
+
+    <!-- Логотип GottaGo -->
+    <LinearLayout
+        android:id="@+id/logo_container"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginTop="10dp"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <TextView
+            android:id="@+id/logo_gotta"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Gotta"
+            android:textSize="36sp"
+            android:fontFamily="sans-serif-medium"
+            android:textColor="#32CD32" />
+
+        <TextView
+            android:id="@+id/logo_go"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Go"
+            android:textSize="36sp"
+            android:fontFamily="sans-serif-medium"
+            android:textColor="#1976D2" />
+    </LinearLayout>
+
+    <!-- Кнопка "Назад" -->
+    <ImageView
+        android:id="@+id/back_button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:src="@drawable/ic_back"
+        android:contentDescription="Назад"
+        android:padding="16dp"
+        android:layout_marginStart="8dp"
+        android:layout_marginTop="8dp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <!-- Заголовок -->
+    <TextView
+        android:id="@+id/title"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="ДОГОВОР-ОФЕРТА"
+        android:textSize="20sp"
+        android:textStyle="bold"
+        android:textColor="@color/black"
+        android:layout_marginTop="16dp"
+        app:layout_constraintTop_toBottomOf="@id/back_button"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <!-- Подзаголовок -->
+    <TextView
+        android:id="@+id/subtitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="о предоставлении доступа к сервису «GottaGo»"
+        android:textSize="16sp"
+        android:textColor="@color/black"
+        android:layout_marginTop="8dp"
+        app:layout_constraintTop_toBottomOf="@id/title"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <!-- Место и дата -->
+    <TextView
+        android:id="@+id/location_date"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="г. Москва\nДата публикации оферты: 26 апреля 2025 г."
+        android:textSize="14sp"
+        android:textColor="@color/black"
+        android:layout_marginTop="16dp"
+        app:layout_constraintTop_toBottomOf="@id/subtitle"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <!-- ScrollView с текстом оферты -->
+    <ScrollView
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_marginTop="16dp"
+        android:layout_marginStart="16dp"
+        android:layout_marginEnd="16dp"
+        android:layout_marginBottom="16dp"
+        app:layout_constraintTop_toBottomOf="@id/location_date"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <!-- Вступление -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Индивидуальный предприниматель, зарегистрированный в качестве самозанятого гражданина РФ, Марьясин Антон Александрович, ИНН 123456789012, далее именуемый «Оператор», предлагает физическим лицам (далее – «Пользователь») заключить настоящий договор-оферту (далее – «Договор») на изложенных ниже условиях."
+                android:textSize="14sp"
+                android:textColor="@color/black"
+                android:layout_marginTop="16dp" />
+
+            <!-- 1. Термины и определения -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="1. Термины и определения"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:textColor="@color/black"
+                android:layout_marginTop="16dp" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="1.1. «Сервис» — мобильное приложение и/или веб-интерфейс «GottaGo», предназначенное для поиска и организации временного безвозмездного обмена жилыми помещениями между Пользователями.\n\n1.2. «Пользователь» — физическое лицо, прошедшее регистрацию в Сервисе и получившее доступ к его функционалу.\n\n1.3. «Аккаунт» — персональный раздел Пользователя в Сервисе, доступ к которому осуществляется по логину (e-mail или телефону) и паролю.\n\n1.4. «Объявление» — информация о жилом помещении, размещенная Пользователем в Сервисе для целей обмена.\n\n1.5. «Сервисный сбор» — плата за использование функционала Сервиса, взимаемая Оператором."
+                android:textSize="14sp"
+                android:textColor="@color/black"
+                android:layout_marginTop="8dp" />
+
+            <!-- 2. Предмет договора -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="2. Предмет договора"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:textColor="@color/black"
+                android:layout_marginTop="16dp" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="2.1. Оператор предоставляет Пользователю неисключительное, непередаваемое право доступа к функционалу Сервиса.\n\n2.2. Оператор оказывает информационные услуги, заключающиеся в обеспечении работы Сервиса и поддержки Пользователя."
+                android:textSize="14sp"
+                android:textColor="@color/black"
+                android:layout_marginTop="8dp" />
+
+            <!-- 3. Акцепт оферты и условия участия -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="3. Акцепт оферты и условия участия"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:textColor="@color/black"
+                android:layout_marginTop="16dp" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="3.1. Акцепт оферты происходит с момента:\n- завершения процедуры регистрации в Сервисе;\n- либо фактического начала использования любого функционала Сервиса.\n\n3.2. Регистрация или использование Сервиса означает полное и безоговорочное принятие условий Договора.\n\n3.3. Пользователь обязуется предоставлять достоверные персональные данные при регистрации.\n\n3.4. Пользователь самостоятельно несет ответственность за соблюдение законодательства при заключении сделок обмена."
+                android:textSize="14sp"
+                android:textColor="@color/black"
+                android:layout_marginTop="8dp" />
+
+            <!-- 4. Права и обязанности сторон -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="4. Права и обязанности сторон"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:textColor="@color/black"
+                android:layout_marginTop="16dp" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="4.1. Оператор обязуется:\n- 4.1.1. Предоставлять доступ к функционалу Сервиса круглосуточно, за исключением технических перерывов и иных случаев, определяемых Оператором;\n- 4.1.2. Обеспечивать хранение и обработку персональных данных в соответствии с законодательством РФ;\n- 4.1.3. Обеспечивать возможность размещения Объявлений, подачи заявок на обмен, общения с другими Пользователями, за исключением случаев технических сбоев, багов или иных причин, определяемых Оператором;\n- 4.1.4. Обрабатывать запросы на удаление Аккаунта и персональных данных в срок не позднее 30 (тридцати) календарных дней с момента получения соответствующего запроса Пользователя.\n\n4.2. Оператор вправе:\n- 4.2.1. Взимать сервисный сбор за размещение Объявлений;\n- 4.2.2. Блокировать или ограничивать доступ к Аккаунту:\n    - при нарушении условий Договора или по собственному усмотрению Оператора — на срок, определяемый Оператором, включая возможность бессрочной блокировки;\n    - при обнаружении подозрительной активности — на срок не более 60 (шестидесяти) календарных дней; при этом указанный срок может быть продлён на неопределённый период, если того требуют внутреннее расследование или иные объективные причины для установления всех фактов произошедшего;\n- 4.2.3. Вносить изменения в работу Сервиса и условия Договора с уведомлением Пользователя.\n\n4.3. Пользователь обязуется:\n- 4.3.1. Использовать Сервис только в законных целях;\n- 4.3.2. Размещать только достоверные сведения об объектах обмена;\n- 4.3.3. Самостоятельно нести все риски, связанные с заключением сделок.\n\n4.4. Пользователь вправе:\n- 4.4.1. Удалить свой Аккаунт через интерфейс Сервиса или запросив удаление у Оператора;\n- 4.4.2. Получать поддержку по вопросам работы Сервиса."
+                android:textSize="14sp"
+                android:textColor="@color/black"
+                android:layout_marginTop="8dp" />
+
+            <!-- 5. Стоимость и порядок расчетов -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="5. Стоимость и порядок расчетов"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:textColor="@color/black"
+                android:layout_marginTop="16dp" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="5.1. Размещение Объявлений в Сервисе является платным. Стоимость Сервисного сбора указывается в интерфейсе при оформлении размещения.\n\n5.2. Оплата производится доступными в Сервисе способами.\n\n5.3. Оплата Сервисного сбора не является арендной платой или платой за проживание."
+                android:textSize="14sp"
+                android:textColor="@color/black"
+                android:layout_marginTop="8dp" />
+
+            <!-- 6. Ограничение ответственности -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="6. Ограничение ответственности"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:textColor="@color/black"
+                android:layout_marginTop="16dp" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="6.1. Оператор не является стороной сделок между Пользователями.\n\n6.2. Оператор не несет ответственности за:\n- 6.2.1. Качество, безопасность и соответствие описанию размещаемых объектов;\n- 6.2.2. Бесперебойную и безошибочную работу Сервиса.\n\n6.3. Все споры между Пользователями решаются самостоятельно."
+                android:textSize="14sp"
+                android:textColor="@color/black"
+                android:layout_marginTop="8dp" />
+
+            <!-- 7. Персональные данные -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="7. Персональные данные"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:textColor="@color/black"
+                android:layout_marginTop="16dp" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="7.1. Пользователь соглашается на обработку своих персональных данных в целях исполнения настоящего Договора.\n\n7.2. Оператор обязуется не передавать персональные данные третьим лицам без согласия Пользователя, за исключением случаев, предусмотренных законом.\n\n7.3. Пользователь вправе запросить удаление своих данных в соответствии с законодательством РФ."
+                android:textSize="14sp"
+                android:textColor="@color/black"
+                android:layout_marginTop="8dp" />
+
+            <!-- 8. Изменение условий оферты -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="8. Изменение условий оферты"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:textColor="@color/black"
+                android:layout_marginTop="16dp" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="8.1. Оператор имеет право изменять условия настоящего Договора.\n\n8.2. Новая редакция вступает в силу с момента её публикации на сайте или в приложении Сервиса."
+                android:textSize="14sp"
+                android:textColor="@color/black"
+                android:layout_marginTop="8dp" />
+
+            <!-- 9. Срок действия и расторжение -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="9. Срок действия и расторжение"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:textColor="@color/black"
+                android:layout_marginTop="16dp" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="9.1. Договор вступает в силу с момента акцепта и действует бессрочно.\n\n9.2. Пользователь вправе в любой момент расторгнуть Договор удалением Аккаунта или направлением соответствующего уведомления Оператору."
+                android:textSize="14sp"
+                android:textColor="@color/black"
+                android:layout_marginTop="8dp" />
+
+            <!-- 10. Заключительные положения -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="10. Заключительные положения"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:textColor="@color/black"
+                android:layout_marginTop="16dp" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="10.1. К отношениям сторон применяется законодательство Российской Федерации.\n\n10.2. Споры решаются путём переговоров, а при недостижении согласия — в судебном порядке по месту нахождения Оператора."
+                android:textSize="14sp"
+                android:textColor="@color/black"
+                android:layout_marginTop="8dp"
+                android:layout_marginBottom="16dp" />
+
+        </LinearLayout>
+    </ScrollView>
+
+</androidx.constraintlayout.widget.ConstraintLayout>

@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:id="@android:id/background">
+        <bitmap android:src="@android:drawable/star_big_off" />
+    </item>
+    <item android:id="@android:id/secondaryProgress">
+        <bitmap android:src="@android:drawable/star_big_off" />
+    </item>
+    <item android:id="@android:id/progress">
+        <bitmap android:src="@android:drawable/star_big_on" />
+    </item>
+</layer-list>
