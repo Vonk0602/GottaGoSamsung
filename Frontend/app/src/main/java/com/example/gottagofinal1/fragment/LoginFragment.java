@@ -59,6 +59,7 @@ public class LoginFragment extends Fragment {
         public String name;
         public String description;
         public String avatarUrl;
+        public String token;
     }
 
     @Override
@@ -69,7 +70,7 @@ public class LoginFragment extends Fragment {
                 .addConverterFactory(GsonConverterFactory.create())
                 .build();
         authApi = retrofit.create(AuthApi.class);
-        Log.d(TAG, "Retrofit initialized with base URL: http://192.168.1.37:8080/api/");
+        Log.d(TAG, "Инициализирован Retrofit с базовым URL: http://192.168.1.37:8080/api/");
     }
 
     @Nullable
@@ -93,26 +94,26 @@ public class LoginFragment extends Fragment {
         super.onViewCreated(view, savedInstanceState);
 
         loginButton.setOnClickListener(v -> {
-            Log.d(TAG, "Login button clicked");
+            Log.d(TAG, "Нажата кнопка входа");
             String email = emailPhoneInput.getText().toString().trim();
             String password = passwordInput.getText().toString().trim();
 
             if (email.isEmpty() || password.isEmpty()) {
                 Toast.makeText(getContext(), "Заполните все поля", Toast.LENGTH_LONG).show();
-                Log.w(TAG, "Empty fields detected");
+                Log.w(TAG, "Обнаружены пустые поля");
                 return;
             }
 
             boolean isEmail = email.contains("@");
             if (!isEmail && !email.matches("\\d{10}")) {
                 Toast.makeText(getContext(), "Введите корректный email или номер телефона", Toast.LENGTH_LONG).show();
-                Log.w(TAG, "Invalid email format: " + email);
+                Log.w(TAG, "Некорректный формат email: " + email);
                 return;
             }
 
             loginButton.setEnabled(false);
             LoginRequest request = new LoginRequest(email, password);
-            Log.d(TAG, "Sending login request: email=" + email);
+            Log.d(TAG, "Отправка запроса на вход: email=" + email);
 
             authApi.login(request).enqueue(new Callback<LoginResponse>() {
                 @Override
@@ -122,15 +123,16 @@ public class LoginFragment extends Fragment {
                         LoginResponse loginResponse = response.body();
                         if (loginResponse.userId == null || loginResponse.userId.isEmpty()) {
                             Toast.makeText(getContext(), "Ошибка: получен пустой userId", Toast.LENGTH_LONG).show();
-                            Log.e(TAG, "Received empty or null userId from server");
+                            Log.e(TAG, "Получен пустой или null userId от сервера");
                             return;
                         }
-                        Log.d(TAG, "Login successful, userId: " + loginResponse.userId);
+                        Log.d(TAG, "Вход успешен, userId: " + loginResponse.userId);
                         SharedPreferences prefs = getContext().getSharedPreferences(PREFS_NAME, getContext().MODE_PRIVATE);
                         SharedPreferences.Editor editor = prefs.edit();
                         editor.putString("user_id", loginResponse.userId);
+                        editor.putString("auth_token", loginResponse.token);
                         editor.apply();
-                        Log.d(TAG, "Saved userId to SharedPreferences: " + loginResponse.userId);
+                        Log.d(TAG, "Сохранены userId и token в SharedPreferences: userId=" + loginResponse.userId);
                         Toast.makeText(getContext(), "Вход выполнен успешно!", Toast.LENGTH_SHORT).show();
 
                         getParentFragmentManager()
@@ -149,7 +151,7 @@ public class LoginFragment extends Fragment {
                             try {
                                 errorMessage += ", " + response.errorBody().string();
                             } catch (Exception e) {
-                                Log.e(TAG, "Failed to read error body: ", e);
+                                Log.e(TAG, "Ошибка чтения тела ответа: ", e);
                             }
                         }
                         Toast.makeText(getContext(), errorMessage, Toast.LENGTH_LONG).show();
@@ -168,7 +170,7 @@ public class LoginFragment extends Fragment {
         });
 
         registerTab.setOnClickListener(v -> {
-            Log.d(TAG, "Register tab clicked");
+            Log.d(TAG, "Нажата вкладка регистрации");
             getParentFragmentManager()
                     .beginTransaction()
                     .setCustomAnimations(
@@ -183,7 +185,7 @@ public class LoginFragment extends Fragment {
         });
 
         forgotPassword.setOnClickListener(v -> {
-            Log.d(TAG, "Forgot password clicked");
+            Log.d(TAG, "Нажата ссылка восстановления пароля");
             getParentFragmentManager()
                     .beginTransaction()
                     .setCustomAnimations(
@@ -198,7 +200,7 @@ public class LoginFragment extends Fragment {
         });
 
         loginWithPhonePart1.setOnClickListener(v -> {
-            Log.d(TAG, "Login with phone clicked");
+            Log.d(TAG, "Нажата ссылка входа по телефону");
             try {
                 getParentFragmentManager()
                         .beginTransaction()
@@ -212,12 +214,12 @@ public class LoginFragment extends Fragment {
                         .addToBackStack(null)
                         .commit();
             } catch (Exception e) {
-                Log.e(TAG, "Error navigating to PhoneLoginFragment: ", e);
+                Log.e(TAG, "Ошибка перехода к PhoneLoginFragment: ", e);
             }
         });
 
         termsText.setOnClickListener(v -> {
-            Log.d(TAG, "Terms text clicked");
+            Log.d(TAG, "Нажат текст условий");
             getParentFragmentManager()
                     .beginTransaction()
                     .setCustomAnimations(
@@ -249,12 +251,12 @@ public class LoginFragment extends Fragment {
             editText.setInputType(android.text.InputType.TYPE_CLASS_TEXT | android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD);
             editText.setCompoundDrawablesWithIntrinsicBounds(R.drawable.ic_lock, 0, R.drawable.ic_view_lock, 0);
             isPasswordVisible = false;
-            Log.d(TAG, "Password visibility toggled off");
+            Log.d(TAG, "Видимость пароля отключена");
         } else {
             editText.setInputType(android.text.InputType.TYPE_CLASS_TEXT | android.text.InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD);
             editText.setCompoundDrawablesWithIntrinsicBounds(R.drawable.ic_lock, 0, R.drawable.ic_view, 0);
             isPasswordVisible = true;
-            Log.d(TAG, "Password visibility toggled on");
+            Log.d(TAG, "Видимость пароля включена");
         }
         editText.setSelection(editText.getText().length());
     }

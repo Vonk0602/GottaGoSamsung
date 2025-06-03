@@ -23,11 +23,9 @@ public class NavigationHelper {
             ImageView navMessagesIcon, TextView navMessagesText,
             ImageView navProfileIcon, TextView navProfileText
     ) {
-        // Цвета: активная вкладка — более тёмный зелёный, неактивные — как в макете (по умолчанию #1976D2)
-        int activeColor = ContextCompat.getColor(context, R.color.nav_active); // Более тёмный зелёный
-        int inactiveColor = ContextCompat.getColor(context, R.color.nav_inactive); // Цвет по умолчанию (синий)
+        int activeColor = ContextCompat.getColor(context, R.color.nav_active);
+        int inactiveColor = ContextCompat.getColor(context, R.color.nav_inactive);
 
-        // Сбрасываем все вкладки на неактивный цвет (по умолчанию из макета)
         navHomeIcon.setColorFilter(inactiveColor);
         navHomeText.setTextColor(ContextCompat.getColor(context, android.R.color.white));
         navFavoriteIcon.setColorFilter(inactiveColor);
@@ -39,7 +37,6 @@ public class NavigationHelper {
         navProfileIcon.setColorFilter(inactiveColor);
         navProfileText.setTextColor(ContextCompat.getColor(context, android.R.color.white));
 
-        // Устанавливаем активный цвет для выбранной вкладки
         switch (activeTab) {
             case TAB_HOME:
                 navHomeIcon.setColorFilter(activeColor);

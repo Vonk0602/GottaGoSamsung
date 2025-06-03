@@ -2,9 +2,11 @@ package com.example.gottagobackend.repository;
 
 import com.example.gottagobackend.entity.Chat;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -20,4 +22,9 @@ public interface ChatRepository extends JpaRepository<Chat, String> {
                                        @Param("user2Id") String user2Id);
 
     Chat findByListingIdAndUser1IdAndUser2Id(String listingId, String user1Id, String user2Id);
+
+    @Modifying
+    @Transactional
+    @Query("UPDATE Chat c SET c.listingId = :newListingId WHERE c.listingId = :listingId")
+    void updateListingId(@Param("listingId") String listingId, @Param("newListingId") String newListingId);
 }

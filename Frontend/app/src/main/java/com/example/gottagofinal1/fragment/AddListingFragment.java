@@ -24,6 +24,8 @@ import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
 import androidx.core.content.FileProvider;
 import androidx.fragment.app.Fragment;
+import androidx.recyclerview.widget.RecyclerView;
+import androidx.viewpager2.widget.ViewPager2;
 import com.bumptech.glide.Glide;
 import com.example.gottagofinal1.R;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -67,16 +69,15 @@ public class AddListingFragment extends Fragment {
     private EditText capacityInput;
     private Button addButton;
     private ImageView backButton;
-    private ImageView imagePreview;
-    private TextView addPhotoText;
-
-    private final OkHttpClient client = new OkHttpClient();
-    private final ObjectMapper objectMapper = new ObjectMapper();
-    private String imageUrl;
+    private ViewPager2 imagePager;
+    private ImagePagerAdapter imagePagerAdapter;
+    private List<String> imageUrls;
     private File cameraImageFile;
     private Uri cameraImageUri;
     private String userId;
 
+    private final OkHttpClient client = new OkHttpClient();
+    private final ObjectMapper objectMapper = new ObjectMapper();
     private ActivityResultLauncher<Intent> galleryLauncher;
     private ActivityResultLauncher<Intent> cameraLauncher;
     private ActivityResultLauncher<String> permissionLauncher;
@@ -98,8 +99,11 @@ public class AddListingFragment extends Fragment {
         capacityInput = view.findViewById(R.id.capacity_input);
         addButton = view.findViewById(R.id.add_button);
         backButton = view.findViewById(R.id.back_button);
-        imagePreview = view.findViewById(R.id.image_preview);
-        addPhotoText = view.findViewById(R.id.add_photo_text);
+        imagePager = view.findViewById(R.id.image_pager);
+
+        imageUrls = new ArrayList<>();
+        imagePagerAdapter = new ImagePagerAdapter(imageUrls, this::showImageSourceDialog);
+        imagePager.setAdapter(imagePagerAdapter);
 
         userId = getCurrentUserId();
         if (userId == null || userId.isEmpty()) {
@@ -165,8 +169,6 @@ public class AddListingFragment extends Fragment {
             }
         });
 
-        imagePreview.setOnClickListener(v -> permissionLauncher.launch(Manifest.permission.CAMERA));
-
         return view;
     }
 
@@ -191,8 +193,8 @@ public class AddListingFragment extends Fragment {
                 return;
             }
 
-            if (imageUrl == null) {
-                Toast.makeText(getContext(), "Пожалуйста, добавьте изображение", Toast.LENGTH_SHORT).show();
+            if (imageUrls.isEmpty()) {
+                Toast.makeText(getContext(), "Пожалуйста, добавьте хотя бы одно изображение", Toast.LENGTH_SHORT).show();
                 return;
             }
 
@@ -217,19 +219,24 @@ public class AddListingFragment extends Fragment {
                 return;
             }
 
-            List<String> imageUrls = new ArrayList<>();
-            imageUrls.add(imageUrl);
-
             try {
                 String json = objectMapper.writeValueAsString(new ListingRequest(
                         userId, title, description, city, address, imageUrls,
                         serverDateFormatter.format(fromDate), serverDateFormatter.format(toDate), capacity));
                 Log.d(TAG, "Отправляемый JSON: " + json);
                 RequestBody body = RequestBody.create(json, MediaType.parse("application/json"));
-                Request request = new Request.Builder()
+                SharedPreferences prefs = requireContext().getSharedPreferences(PREFS_NAME, requireContext().MODE_PRIVATE);
+                String token = prefs.getString("auth_token", null);
+                Request.Builder requestBuilder = new Request.Builder()
                         .url(SERVER_URL)
-                        .post(body)
-                        .build();
+                        .post(body);
+                if (token != null) {
+                    requestBuilder.addHeader("Authorization", "Bearer " + token);
+                    Log.d(TAG, "Добавлен заголовок Authorization с токеном");
+                } else {
+                    Log.w(TAG, "Токен не найден в SharedPreferences");
+                }
+                Request request = requestBuilder.build();
 
                 client.newCall(request).enqueue(new Callback() {
                     @Override
@@ -280,7 +287,6 @@ public class AddListingFragment extends Fragment {
         });
     }
 
-
     private String getCurrentUserId() {
         SharedPreferences prefs = requireContext().getSharedPreferences(PREFS_NAME, requireContext().MODE_PRIVATE);
         String userId = prefs.getString("user_id", null);
@@ -292,15 +298,23 @@ public class AddListingFragment extends Fragment {
         SharedPreferences prefs = requireContext().getSharedPreferences(PREFS_NAME, requireContext().MODE_PRIVATE);
         SharedPreferences.Editor editor = prefs.edit();
         editor.remove("user_id");
+        editor.remove("auth_token");
         editor.apply();
-        Log.d(TAG, "userId очищен из SharedPreferences");
+        Log.d(TAG, "userId и токен очищены из SharedPreferences");
     }
 
     private void verifyUserProfile(String userId, CallbackVerification callback) {
-        Request request = new Request.Builder()
-                .url(PROFILE_URL + userId)
-                .get()
-                .build();
+        SharedPreferences prefs = requireContext().getSharedPreferences(PREFS_NAME, requireContext().MODE_PRIVATE);
+        String token = prefs.getString("auth_token", null);
+        Request.Builder requestBuilder = new Request.Builder()
+                .url(PROFILE_URL + userId);
+        if (token != null) {
+            requestBuilder.addHeader("Authorization", "Bearer " + token);
+            Log.d(TAG, "Добавлен заголовок Authorization для проверки профиля");
+        } else {
+            Log.w(TAG, "Токен не найден для проверки профиля");
+        }
+        Request request = requestBuilder.build();
 
         client.newCall(request).enqueue(new Callback() {
             @Override
@@ -464,13 +478,16 @@ public class AddListingFragment extends Fragment {
             public void onResponse(Call call, Response response) throws IOException {
                 String responseBody = response.body() != null ? response.body().string() : "No response body";
                 if (response.isSuccessful()) {
-                    imageUrl = SUPABASE_URL + "/storage/v1/object/public/" + SUPABASE_BUCKET + "/" + path;
-                    Log.d(TAG, "Изображение загружено: " + imageUrl);
+                    String newImageUrl = SUPABASE_URL + "/storage/v1/object/public/" + SUPABASE_BUCKET + "/" + path;
+                    Log.d(TAG, "Изображение загружено: " + newImageUrl);
                     requireActivity().runOnUiThread(() -> {
-                        Glide.with(AddListingFragment.this)
-                                .load(imageUrl)
-                                .into(imagePreview);
-                        addPhotoText.setVisibility(View.GONE);
+                        if (imageUrls.size() < 5) {
+                            imageUrls.add(newImageUrl);
+                            imagePagerAdapter.notifyDataSetChanged();
+                            imagePager.setCurrentItem(imageUrls.size(), true);
+                        } else {
+                            Toast.makeText(getContext(), "Максимум 5 изображений", Toast.LENGTH_SHORT).show();
+                        }
                     });
                 } else {
                     Log.e(TAG, "Ошибка ответа: HTTP " + response.code() + " " + response.message());
@@ -527,5 +544,78 @@ public class AddListingFragment extends Fragment {
         public void setAvailableTo(String availableTo) { this.availableTo = availableTo; }
         public int getCapacity() { return capacity; }
         public void setCapacity(int capacity) { this.capacity = capacity; }
+    }
+
+    private static class ImagePagerAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
+        private static final int TYPE_IMAGE = 0;
+        private static final int TYPE_ADD_BUTTON = 1;
+        private final List<String> imageUrls;
+        private final Runnable onAddClick;
+
+        public ImagePagerAdapter(List<String> imageUrls, Runnable onAddClick) {
+            this.imageUrls = imageUrls;
+            this.onAddClick = onAddClick;
+        }
+
+        @Override
+        public int getItemViewType(int position) {
+            if (position < imageUrls.size()) {
+                return TYPE_IMAGE;
+            } else if (position == imageUrls.size() && imageUrls.size() < 5) {
+                return TYPE_ADD_BUTTON;
+            }
+            return TYPE_IMAGE;
+        }
+
+        @NonNull
+        @Override
+        public RecyclerView.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+            if (viewType == TYPE_IMAGE) {
+                View view = LayoutInflater.from(parent.getContext())
+                        .inflate(R.layout.item_image, parent, false);
+                return new ImageViewHolder(view);
+            } else {
+                View view = LayoutInflater.from(parent.getContext())
+                        .inflate(R.layout.item_add_image, parent, false);
+                return new AddImageViewHolder(view);
+            }
+        }
+
+        @Override
+        public void onBindViewHolder(@NonNull RecyclerView.ViewHolder holder, int position) {
+            if (holder instanceof ImageViewHolder) {
+                String imageUrl = imageUrls.get(position);
+                ImageViewHolder imageHolder = (ImageViewHolder) holder;
+                Glide.with(imageHolder.imageView.getContext())
+                        .load(imageUrl)
+                        .into(imageHolder.imageView);
+            } else if (holder instanceof AddImageViewHolder) {
+                AddImageViewHolder addHolder = (AddImageViewHolder) holder;
+                addHolder.addButton.setOnClickListener(v -> onAddClick.run());
+            }
+        }
+
+        @Override
+        public int getItemCount() {
+            return imageUrls.size() < 5 ? imageUrls.size() + 1 : imageUrls.size();
+        }
+
+        static class ImageViewHolder extends RecyclerView.ViewHolder {
+            ImageView imageView;
+
+            ImageViewHolder(View itemView) {
+                super(itemView);
+                imageView = itemView.findViewById(R.id.image_view);
+            }
+        }
+
+        static class AddImageViewHolder extends RecyclerView.ViewHolder {
+            TextView addButton;
+
+            AddImageViewHolder(View itemView) {
+                super(itemView);
+                addButton = itemView.findViewById(R.id.add_image_button);
+            }
+        }
     }
 }

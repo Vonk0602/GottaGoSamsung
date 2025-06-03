@@ -48,6 +48,7 @@ public class ProfileFragment extends Fragment {
     private ImageView profileAvatar;
     private TextView profileName;
     private TextView profileDescription;
+    private TextView ratingValue;
     private ImageView navHomeIcon, navFavoriteIcon, navListingsIcon, navMessagesIcon, navProfileIcon;
     private TextView navHomeText, navFavoriteText, navListingsText, navMessagesText, navProfileText;
     private TextView tabListings, tabReviews;
@@ -73,7 +74,7 @@ public class ProfileFragment extends Fragment {
         Call<List<Review>> getUserReviews(@Path("userId") String userId);
 
         @GET("/api/reviews/user/{userId}/average")
-        Call<AverageRatingResponse> getAverageRating(@Path("userId") String userId);
+        Call<Double> getAverageRating(@Path("userId") String userId);
 
         @POST("/api/reviews")
         Call<Void> addReview(@Body ReviewRequest reviewRequest);
@@ -84,10 +85,6 @@ public class ProfileFragment extends Fragment {
         public String name;
         public String description;
         public String avatarUrl;
-    }
-
-    public static class AverageRatingResponse {
-        public double rating;
     }
 
     public static class ReviewRequest {
@@ -146,6 +143,7 @@ public class ProfileFragment extends Fragment {
             profileAvatar = view.findViewById(R.id.profile_avatar);
             profileName = view.findViewById(R.id.profile_name);
             profileDescription = view.findViewById(R.id.profile_description);
+            ratingValue = view.findViewById(R.id.rating_value);
             navHomeIcon = view.findViewById(R.id.nav_home_icon);
             navFavoriteIcon = view.findViewById(R.id.nav_favorite_icon);
             navListingsIcon = view.findViewById(R.id.add_listing_button);
@@ -327,7 +325,6 @@ public class ProfileFragment extends Fragment {
                     profileDescription.setText("");
                     profileAvatar.setImageResource(R.drawable.placeholder_image);
                     setRating(0);
-                    Toast.makeText(getContext(), "Ошибка загрузки профиля", Toast.LENGTH_SHORT).show();
                 }
             }
 
@@ -413,11 +410,11 @@ public class ProfileFragment extends Fragment {
 
     private void fetchAverageRating(String userId) {
         Log.d(TAG, "Получение среднего рейтинга для userId: " + userId);
-        authApi.getAverageRating(userId).enqueue(new Callback<AverageRatingResponse>() {
+        authApi.getAverageRating(userId).enqueue(new Callback<Double>() {
             @Override
-            public void onResponse(@NonNull Call<AverageRatingResponse> call, @NonNull Response<AverageRatingResponse> response) {
+            public void onResponse(@NonNull Call<Double> call, @NonNull Response<Double> response) {
                 if (response.isSuccessful() && response.body() != null) {
-                    double rating = response.body().rating;
+                    double rating = response.body();
                     Log.d(TAG, "Средний рейтинг: " + rating);
                     setRating(rating);
                 } else {
@@ -427,7 +424,7 @@ public class ProfileFragment extends Fragment {
             }
 
             @Override
-            public void onFailure(@NonNull Call<AverageRatingResponse> call, @NonNull Throwable t) {
+            public void onFailure(@NonNull Call<Double> call, @NonNull Throwable t) {
                 Log.e(TAG, "Ошибка сети при загрузке среднего рейтинга: " + t.getMessage(), t);
                 setRating(0);
             }
@@ -509,19 +506,18 @@ public class ProfileFragment extends Fragment {
 
     private void setRating(double rating) {
         ImageView[] stars = {star1, star2, star3, star4, star5};
-        int fullStars = (int) rating;
-        boolean hasHalfStar = rating % 1 >= 0.5;
+        int displayedStars = rating >= 4.5 ? (int) Math.ceil(rating) : (int) Math.floor(rating);
 
         for (int i = 0; i < stars.length; i++) {
             if (stars[i] == null) continue;
-            if (i < fullStars) {
+            if (i < displayedStars) {
                 stars[i].setImageResource(R.drawable.ic_star_filled);
-            } else if (i == fullStars && hasHalfStar) {
-                stars[i].setImageResource(R.drawable.ic_star_half);
             } else {
                 stars[i].setImageResource(R.drawable.ic_star_empty);
             }
         }
+
+        ratingValue.setText(String.format("%.2f", rating));
     }
 
     private void updateTabStyles() {

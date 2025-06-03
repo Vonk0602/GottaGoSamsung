@@ -6,7 +6,6 @@
     android:layout_height="match_parent"
     android:background="#FFFFFF">
 
-    <!-- Логотип GottaGo -->
     <LinearLayout
         android:id="@+id/logo_container"
         android:layout_width="wrap_content"
@@ -36,7 +35,6 @@
             android:textColor="#1976D2" />
     </LinearLayout>
 
-    <!-- Имитация строки поиска -->
     <LinearLayout
         android:id="@+id/search_bar"
         android:layout_width="0dp"
@@ -82,7 +80,6 @@
             android:contentDescription="Настройки" />
     </LinearLayout>
 
-    <!-- RecyclerView для списка объявлений -->
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/recycler_view_listings"
         android:layout_width="0dp"
@@ -96,7 +93,6 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
 
-    <!-- Нижняя навигационная панель -->
     <LinearLayout
         android:id="@+id/bottom_panel"
         android:layout_width="match_parent"
@@ -111,7 +107,6 @@
         app:layout_constraintStart_toStartOf="parent">
 
 
-        <!-- Главная -->
         <LinearLayout
             android:layout_width="0dp"
             android:layout_height="wrap_content"
@@ -138,7 +133,6 @@
                 android:textSize="12sp" />
         </LinearLayout>
 
-        <!-- Избранное -->
         <LinearLayout
             android:layout_width="0dp"
             android:layout_height="wrap_content"
@@ -165,7 +159,6 @@
                 android:textSize="12sp" />
         </LinearLayout>
 
-        <!-- Объявления -->
         <LinearLayout
             android:layout_width="0dp"
             android:layout_height="wrap_content"
@@ -192,7 +185,6 @@
                 android:textSize="12sp" />
         </LinearLayout>
 
-        <!-- Сообщения -->
         <LinearLayout
             android:layout_width="0dp"
             android:layout_height="wrap_content"
@@ -219,7 +211,6 @@
                 android:textSize="12sp" />
         </LinearLayout>
 
-        <!-- Профиль -->
         <LinearLayout
             android:layout_width="0dp"
             android:layout_height="wrap_content"

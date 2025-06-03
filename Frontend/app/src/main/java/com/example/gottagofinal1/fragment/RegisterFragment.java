@@ -1,7 +1,7 @@
 package com.example.gottagofinal1.fragment;
 
+import android.content.SharedPreferences;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
@@ -26,6 +26,7 @@ import retrofit2.http.POST;
 public class RegisterFragment extends Fragment {
 
     private static final String TAG = "RegisterFragment";
+    private static final String PREFS_NAME = "user_prefs";
 
     private TextView loginTab;
     private EditText emailInput;
@@ -59,10 +60,12 @@ public class RegisterFragment extends Fragment {
 
     public static class RegisterResponse {
         public String userId;
+        public String token;
         public String error;
 
-        public RegisterResponse(String userId, String error) {
+        public RegisterResponse(String userId, String token, String error) {
             this.userId = userId;
+            this.token = token;
             this.error = error;
         }
     }
@@ -71,11 +74,11 @@ public class RegisterFragment extends Fragment {
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         Retrofit retrofit = new Retrofit.Builder()
-                .baseUrl("http://192.168.1.37:8080")
+                .baseUrl("http://192.168.1.37:8080/")
                 .addConverterFactory(GsonConverterFactory.create())
                 .build();
         authApi = retrofit.create(AuthApi.class);
-        Log.d(TAG, "Retrofit initialized with base URL: http://192.168.1.37:8080");
+        android.util.Log.d(TAG, "Ретрофит инициализирован: http://192.168.1.37:8080/");
     }
 
     @Nullable
@@ -99,7 +102,7 @@ public class RegisterFragment extends Fragment {
         super.onViewCreated(view, savedInstanceState);
 
         registerButton.setOnClickListener(v -> {
-            Log.d(TAG, "Register button clicked");
+            android.util.Log.d(TAG, "Нажата кнопка регистрации");
             String email = emailInput.getText().toString().trim();
             String phone = phoneInput.getText().toString().trim();
             String password = passwordInput.getText().toString().trim();
@@ -107,19 +110,19 @@ public class RegisterFragment extends Fragment {
 
             if (email.isEmpty() || phone.isEmpty() || password.isEmpty() || passwordConfirm.isEmpty()) {
                 Toast.makeText(getContext(), "Ошибка: заполните все поля", Toast.LENGTH_LONG).show();
-                Log.w(TAG, "Empty fields detected");
+                android.util.Log.w(TAG, "Обнаружены пустые поля");
                 return;
             }
 
             if (!password.equals(passwordConfirm)) {
                 Toast.makeText(getContext(), "Ошибка: пароли не совпадают", Toast.LENGTH_LONG).show();
-                Log.w(TAG, "Passwords do not match");
+                android.util.Log.w(TAG, "Пароли не совпадают");
                 return;
             }
 
             registerButton.setEnabled(false);
             RegisterRequest request = new RegisterRequest(email, phone, password, passwordConfirm);
-            Log.d(TAG, "Sending register request: email=" + email + ", phone=" + phone);
+            android.util.Log.d(TAG, "Отправка запроса на регистрацию: email=" + email + ", phone=" + phone);
 
             authApi.register(request).enqueue(new Callback<RegisterResponse>() {
                 @Override
@@ -127,8 +130,18 @@ public class RegisterFragment extends Fragment {
                     registerButton.setEnabled(true);
                     if (response.isSuccessful() && response.body() != null && response.body().userId != null) {
                         String userId = response.body().userId;
-                        Toast.makeText(getContext(), "Registration successful!", Toast.LENGTH_SHORT).show();
-                        Log.d(TAG, "Registration successful, userId=" + userId);
+                        String token = response.body().token;
+                        Toast.makeText(getContext(), "Регистрация успешна!", Toast.LENGTH_SHORT).show();
+                        android.util.Log.d(TAG, "Регистрация успешна, userId=" + userId);
+
+                        SharedPreferences prefs = getContext().getSharedPreferences(PREFS_NAME, getContext().MODE_PRIVATE);
+                        SharedPreferences.Editor editor = prefs.edit();
+                        editor.putString("user_id", userId);
+                        if (token != null) {
+                            editor.putString("auth_token", token);
+                            android.util.Log.d(TAG, "Токен сохранен в SharedPreferences");
+                        }
+                        editor.apply();
 
                         CompleteProfileFragment fragment = new CompleteProfileFragment();
                         Bundle args = new Bundle();
@@ -147,33 +160,33 @@ public class RegisterFragment extends Fragment {
                                 .addToBackStack(null)
                                 .commit();
                     } else {
-                        String errorMessage = "Registration error: HTTP " + response.code() + " " + response.message();
+                        String errorMessage = "Ошибка регистрации: HTTP " + response.code() + " " + response.message();
                         if (response.errorBody() != null) {
                             try {
                                 errorMessage += ", " + response.errorBody().string();
                             } catch (Exception e) {
-                                Log.e(TAG, "Failed to read error body", e);
+                                android.util.Log.e(TAG, "Не удалось прочитать тело ошибки", e);
                             }
                         } else if (response.body() != null && response.body().error != null) {
                             errorMessage = response.body().error;
                         }
                         Toast.makeText(getContext(), errorMessage, Toast.LENGTH_LONG).show();
-                        Log.e(TAG, errorMessage);
+                        android.util.Log.e(TAG, errorMessage);
                     }
                 }
 
                 @Override
                 public void onFailure(Call<RegisterResponse> call, Throwable t) {
                     registerButton.setEnabled(true);
-                    String errorMessage = "Network error: " + t.getMessage();
+                    String errorMessage = "Ошибка сети: " + t.getMessage();
                     Toast.makeText(getContext(), errorMessage, Toast.LENGTH_LONG).show();
-                    Log.e(TAG, errorMessage, t);
+                    android.util.Log.e(TAG, errorMessage, t);
                 }
             });
         });
 
         loginTab.setOnClickListener(v -> {
-            Log.d(TAG, "Login tab clicked");
+            android.util.Log.d(TAG, "Нажата вкладка входа");
             getParentFragmentManager()
                     .beginTransaction()
                     .setCustomAnimations(
@@ -188,7 +201,7 @@ public class RegisterFragment extends Fragment {
         });
 
         termsText.setOnClickListener(v -> {
-            Log.d(TAG, "Terms text clicked");
+            android.util.Log.d(TAG, "Нажат текст условий");
             getParentFragmentManager()
                     .beginTransaction()
                     .setCustomAnimations(

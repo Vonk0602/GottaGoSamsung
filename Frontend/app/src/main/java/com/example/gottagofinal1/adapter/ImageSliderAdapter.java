@@ -10,14 +10,17 @@ import com.bumptech.glide.Glide;
 import com.example.gottagofinal1.R;
 
 import java.util.List;
+import java.util.function.Consumer;
 
 public class ImageSliderAdapter extends RecyclerView.Adapter<ImageSliderAdapter.ImageViewHolder> {
 
     private List<String> imageUrls;
+    private Consumer<Integer> onImageClickListener;
     private static final String PLACEHOLDER_URL = "https://bjksntizdqldttldegiu.supabase.co/storage/v1/object/public/images/sample1.jpg";
 
-    public ImageSliderAdapter(List<String> imageUrls) {
+    public ImageSliderAdapter(List<String> imageUrls, Consumer<Integer> onImageClickListener) {
         this.imageUrls = imageUrls;
+        this.onImageClickListener = onImageClickListener;
     }
 
     @NonNull
@@ -35,6 +38,11 @@ public class ImageSliderAdapter extends RecyclerView.Adapter<ImageSliderAdapter.
                 .placeholder(R.drawable.placeholder_image)
                 .error(PLACEHOLDER_URL)
                 .into(holder.imageView);
+        holder.imageView.setOnClickListener(v -> {
+            if (onImageClickListener != null) {
+                onImageClickListener.accept(position);
+            }
+        });
     }
 
     @Override

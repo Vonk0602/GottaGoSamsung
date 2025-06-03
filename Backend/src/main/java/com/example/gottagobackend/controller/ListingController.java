@@ -76,4 +76,48 @@ public class ListingController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
         }
     }
+
+    @PutMapping("/{listingId}")
+    public ResponseEntity<Void> updateListing(@PathVariable String listingId, @Valid @RequestBody ListingRequest request) {
+        logger.debug("Получен запрос на обновление объявления с идентификатором: {}", listingId);
+        try {
+            listingService.updateListing(listingId, request);
+            logger.debug("Объявление с идентификатором {} успешно обновлено", listingId);
+            return ResponseEntity.ok().build();
+        } catch (IllegalArgumentException e) {
+            logger.error("Ошибка при обновлении объявления с идентификатором {}: {}", listingId, e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+        } catch (Exception e) {
+            logger.error("Неожиданная ошибка при обновлении объявления с идентификатором {}: {}", listingId, e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+        }
+    }
+
+    @DeleteMapping("/{listingId}")
+    public ResponseEntity<Void> deleteListing(@PathVariable String listingId, @RequestBody DeleteRequest request) {
+        logger.debug("Получен запрос на удаление объявления с идентификатором: {}", listingId);
+        try {
+            listingService.deleteListing(listingId, request.getUserId());
+            logger.debug("Объявление с идентификатором {} успешно удалено", listingId);
+            return ResponseEntity.ok().build();
+        } catch (IllegalArgumentException e) {
+            logger.error("Ошибка при удалении объявления с идентификатором {}: {}", listingId, e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+        } catch (Exception e) {
+            logger.error("Неожиданная ошибка при удалении объявления с идентификатором {}: {}", listingId, e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+        }
+    }
+
+    public static class DeleteRequest {
+        private String userId;
+
+        public String getUserId() {
+            return userId;
+        }
+
+        public void setUserId(String userId) {
+            this.userId = userId;
+        }
+    }
 }

@@ -15,8 +15,7 @@ import com.example.gottagofinal1.R;
 public class PhoneLoginFragment extends Fragment {
 
     private ImageView backButton;
-    private LinearLayout termsText; // Добавляем LinearLayout для условий
-
+    private LinearLayout termsText;
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
@@ -43,7 +42,7 @@ public class PhoneLoginFragment extends Fragment {
         termsText.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Log.d("PhoneLoginFragment", "Terms text clicked! Navigating to TermsFragment.");
+                Log.d("PhoneLoginFragment", "1.");
                 getParentFragmentManager()
                         .beginTransaction()
                         .setCustomAnimations(

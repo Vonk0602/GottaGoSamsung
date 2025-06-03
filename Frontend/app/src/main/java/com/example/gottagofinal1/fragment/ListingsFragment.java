@@ -1,5 +1,6 @@
 package com.example.gottagofinal1.fragment;
 
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -31,6 +32,7 @@ import java.util.List;
 public class ListingsFragment extends Fragment {
 
     private static final String SERVER_URL = "http://192.168.1.37:8080/api/listings";
+    private static final String PREFS_NAME = "user_prefs";
 
     private RecyclerView recyclerView;
     private ListingAdapter adapter;
@@ -88,15 +90,22 @@ public class ListingsFragment extends Fragment {
     }
 
     private void fetchListings() {
-        Request request = new Request.Builder()
-                .url(SERVER_URL)
-                .get()
-                .build();
+        SharedPreferences prefs = getContext().getSharedPreferences(PREFS_NAME, getContext().MODE_PRIVATE);
+        String token = prefs.getString("auth_token", null);
+        Request.Builder requestBuilder = new Request.Builder()
+                .url(SERVER_URL);
+        if (token != null) {
+            requestBuilder.addHeader("Authorization", "Bearer " + token);
+            Log.d("ListingsFragment", "Добавлен заголовок Authorization с токеном");
+        } else {
+            Log.w("ListingsFragment", "Токен не найден в SharedPreferences");
+        }
+        Request request = requestBuilder.build();
 
         client.newCall(request).enqueue(new Callback() {
             @Override
             public void onFailure(@NonNull Call call, @NonNull IOException e) {
-                Log.e("ListingsFragment", "Error fetching listings: " + e.getMessage(), e);
+                Log.e("ListingsFragment", "Ошибка получения объявлений: " + e.getMessage(), e);
                 requireActivity().runOnUiThread(() ->
                         adapter.updateListings(new ArrayList<>()));
             }
@@ -109,7 +118,7 @@ public class ListingsFragment extends Fragment {
                     requireActivity().runOnUiThread(() ->
                             adapter.updateListings(listings));
                 } else {
-                    Log.e("ListingsFragment", "Server error: " + response.message());
+                    Log.e("ListingsFragment", "Ошибка сервера: HTTP " + response.code() + " " + response.message());
                     requireActivity().runOnUiThread(() ->
                             adapter.updateListings(new ArrayList<>()));
                 }
@@ -122,15 +131,26 @@ public class ListingsFragment extends Fragment {
         super.onViewCreated(view, savedInstanceState);
 
         navHomeIcon.setOnClickListener(v -> {
-            Log.d("ListingsFragment", "Home icon clicked!");
+            Log.d("ListingsFragment", "Нажата иконка дома!");
         });
 
         navFavoriteIcon.setOnClickListener(v -> {
-            Log.d("ListingsFragment", "Favorite icon clicked!");
+            Log.d("ListingsFragment", "Нажата иконка избранного!");
+            getParentFragmentManager()
+                    .beginTransaction()
+                    .setCustomAnimations(
+                            R.anim.slide_in_right,
+                            R.anim.slide_out_left,
+                            R.anim.slide_in_left,
+                            R.anim.slide_out_right
+                    )
+                    .replace(R.id.fragment_container, new FavoritesFragment())
+                    .addToBackStack(null)
+                    .commit();
         });
 
         navListingsIcon.setOnClickListener(v -> {
-            Log.d("ListingsFragment", "Add listing button clicked!");
+            Log.d("ListingsFragment", "Нажата кнопка добавления объявления!");
             getParentFragmentManager()
                     .beginTransaction()
                     .setCustomAnimations(
@@ -145,11 +165,22 @@ public class ListingsFragment extends Fragment {
         });
 
         navMessagesIcon.setOnClickListener(v -> {
-            Log.d("ListingsFragment", "Messages icon clicked!");
+            Log.d("ListingsFragment", "Нажата иконка сообщений!");
+            getParentFragmentManager()
+                    .beginTransaction()
+                    .setCustomAnimations(
+                            R.anim.slide_in_right,
+                            R.anim.slide_out_left,
+                            R.anim.slide_in_left,
+                            R.anim.slide_out_right
+                    )
+                    .replace(R.id.fragment_container, new ChatsFragment())
+                    .addToBackStack(null)
+                    .commit();
         });
 
         navProfileIcon.setOnClickListener(v -> {
-            Log.d("ListingsFragment", "Profile icon clicked!");
+            Log.d("ListingsFragment", "Нажата иконка профиля!");
             getParentFragmentManager()
                     .beginTransaction()
                     .setCustomAnimations(
@@ -164,16 +195,16 @@ public class ListingsFragment extends Fragment {
         });
 
         settingsIcon.setOnClickListener(v -> {
-            Log.d("ListingsFragment", "Settings icon clicked!");
+            Log.d("ListingsFragment", "Нажата иконка настроек!");
         });
     }
 
     private void openListingDetail(Listing listing) {
         if (listing == null) {
-            Log.e("ListingsFragment", "Attempted to open ListingDetailFragment with null Listing!");
+            Log.e("ListingsFragment", "Попытка открыть ListingDetailFragment с null Listing!");
             return;
         }
-        Log.d("ListingsFragment", "Opening ListingDetailFragment for listing: " + listing.getTitle());
+        Log.d("ListingsFragment", "Открытие ListingDetailFragment для объявления: " + listing.getTitle());
         getParentFragmentManager()
                 .beginTransaction()
                 .setCustomAnimations(
