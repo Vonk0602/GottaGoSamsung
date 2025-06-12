@@ -64,7 +64,7 @@ public class ReviewAdapter extends RecyclerView.Adapter<ReviewAdapter.ReviewView
         Review review = reviews.get(position);
 
         Retrofit retrofit = new Retrofit.Builder()
-                .baseUrl("http://192.168.1.37:8080/api/")
+                .baseUrl("http://95.142.42.129:8080/api/")
                 .addConverterFactory(GsonConverterFactory.create())
                 .build();
         ProfileApi profileApi = retrofit.create(ProfileApi.class);
