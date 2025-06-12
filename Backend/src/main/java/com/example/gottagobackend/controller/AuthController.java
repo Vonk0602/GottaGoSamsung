@@ -1,11 +1,6 @@
 package com.example.gottagobackend.controller;
 
-import com.example.gottagobackend.dto.ChangePasswordRequest;
-import com.example.gottagobackend.dto.CompleteProfileRequest;
-import com.example.gottagobackend.dto.LoginRequest;
-import com.example.gottagobackend.dto.LoginResponse;
-import com.example.gottagobackend.dto.RegisterRequest;
-import com.example.gottagobackend.dto.UpdateProfileRequest;
+import com.example.gottagobackend.dto.*;
 import com.example.gottagobackend.entity.Profile;
 import com.example.gottagobackend.entity.UserCredentials;
 import com.example.gottagobackend.repository.ProfileRepository;
@@ -55,18 +50,18 @@ public class AuthController {
     }
 
     @PostMapping("/register")
-    public ResponseEntity<String> register(@Valid @RequestBody RegisterRequest registerRequest) {
+    public ResponseEntity<RegisterResponse> register(@Valid @RequestBody RegisterRequest registerRequest) {
         logger.debug("Обработка запроса на регистрацию для email: {}", registerRequest.getEmail());
         try {
             String userId = authService.register(registerRequest);
             logger.debug("Регистрация выполнена успешно, userId: {}", userId);
-            return ResponseEntity.status(HttpStatus.CREATED).body(userId);
+            return ResponseEntity.status(HttpStatus.CREATED).body(new RegisterResponse(userId, null));
         } catch (IllegalArgumentException e) {
             logger.error("Ошибка регистрации: {}", e.getMessage());
-            return ResponseEntity.badRequest().body(e.getMessage());
+            return ResponseEntity.badRequest().body(new RegisterResponse(null, e.getMessage()));
         } catch (Exception e) {
             logger.error("Неожиданная ошибка при регистрации: {}", e.getMessage(), e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new RegisterResponse(null, e.getMessage()));
         }
     }
 

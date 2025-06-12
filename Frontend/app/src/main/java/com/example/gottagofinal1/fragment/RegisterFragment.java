@@ -60,12 +60,10 @@ public class RegisterFragment extends Fragment {
 
     public static class RegisterResponse {
         public String userId;
-        public String token;
         public String error;
 
-        public RegisterResponse(String userId, String token, String error) {
+        public RegisterResponse(String userId, String error) {
             this.userId = userId;
-            this.token = token;
             this.error = error;
         }
     }
@@ -130,17 +128,12 @@ public class RegisterFragment extends Fragment {
                     registerButton.setEnabled(true);
                     if (response.isSuccessful() && response.body() != null && response.body().userId != null) {
                         String userId = response.body().userId;
-                        String token = response.body().token;
                         Toast.makeText(getContext(), "Регистрация успешна!", Toast.LENGTH_SHORT).show();
                         android.util.Log.d(TAG, "Регистрация успешна, userId=" + userId);
 
                         SharedPreferences prefs = getContext().getSharedPreferences(PREFS_NAME, getContext().MODE_PRIVATE);
                         SharedPreferences.Editor editor = prefs.edit();
                         editor.putString("user_id", userId);
-                        if (token != null) {
-                            editor.putString("auth_token", token);
-                            android.util.Log.d(TAG, "Токен сохранен в SharedPreferences");
-                        }
                         editor.apply();
 
                         CompleteProfileFragment fragment = new CompleteProfileFragment();
