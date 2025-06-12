@@ -48,6 +48,25 @@ public class ListingController {
         }
     }
 
+    @GetMapping("/filtered")
+    public ResponseEntity<List<Listing>> getFilteredListings(
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) String city,
+            @RequestParam(required = false) Integer capacity,
+            @RequestParam(required = false) String availableFrom,
+            @RequestParam(required = false) String availableTo) {
+        logger.debug("Обработка запроса на получение отфильтрованных объявлений: search={}, city={}, capacity={}, availableFrom={}, availableTo={}",
+                search, city, capacity, availableFrom, availableTo);
+        try {
+            List<Listing> listings = listingService.getFilteredListings(search, city, capacity, availableFrom, availableTo);
+            logger.debug("Получено {} объявлений", listings.size());
+            return ResponseEntity.ok(listings);
+        } catch (Exception e) {
+            logger.error("Ошибка при получении отфильтрованных объявлений: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+        }
+    }
+
     @GetMapping("/user/{userId}")
     public ResponseEntity<List<Listing>> getListingsByUserId(@PathVariable String userId) {
         logger.debug("Обработка запроса на получение объявлений для пользователя с идентификатором: {}", userId);

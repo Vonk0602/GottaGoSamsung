@@ -16,9 +16,12 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
 import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.Date;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 public class ListingService {
@@ -66,6 +69,53 @@ public class ListingService {
 
     public List<Listing> getAllListings() throws JsonProcessingException {
         List<Listing> listings = listingRepository.findAll();
+        for (Listing listing : listings) {
+            if (listing.getImageUrls() != null) {
+                List<String> imageUrls = objectMapper.readValue(listing.getImageUrls(), new TypeReference<List<String>>(){});
+                listing.setImageUrls(objectMapper.writeValueAsString(imageUrls));
+            }
+        }
+        return listings;
+    }
+
+    public List<Listing> getFilteredListings(String search, String city, Integer capacity, String availableFrom, String availableTo) throws JsonProcessingException {
+        List<Listing> listings = listingRepository.findAll();
+        if (search != null && !search.isEmpty()) {
+            listings = listings.stream()
+                    .filter(l -> l.getTitle().toLowerCase().contains(search.toLowerCase()) ||
+                            l.getDescription().toLowerCase().contains(search.toLowerCase()))
+                    .collect(Collectors.toList());
+        }
+        if (city != null && !city.isEmpty()) {
+            listings = listings.stream()
+                    .filter(l -> l.getCity().equalsIgnoreCase(city))
+                    .collect(Collectors.toList());
+        }
+        if (capacity != null) {
+            listings = listings.stream()
+                    .filter(l -> l.getCapacity() >= capacity)
+                    .collect(Collectors.toList());
+        }
+        if (availableFrom != null && !availableFrom.isEmpty()) {
+            try {
+                LocalDate fromDate = LocalDate.parse(availableFrom, DateTimeFormatter.ISO_LOCAL_DATE);
+                listings = listings.stream()
+                        .filter(l -> !l.getAvailableFrom().toInstant().atZone(ZoneId.systemDefault()).toLocalDate().isAfter(fromDate))
+                        .collect(Collectors.toList());
+            } catch (DateTimeParseException e) {
+                logger.warn("Неверный формат даты availableFrom: {}", availableFrom);
+            }
+        }
+        if (availableTo != null && !availableTo.isEmpty()) {
+            try {
+                LocalDate toDate = LocalDate.parse(availableTo, DateTimeFormatter.ISO_LOCAL_DATE);
+                listings = listings.stream()
+                        .filter(l -> !l.getAvailableTo().toInstant().atZone(ZoneId.systemDefault()).toLocalDate().isBefore(toDate))
+                        .collect(Collectors.toList());
+            } catch (DateTimeParseException e) {
+                logger.warn("Неверный формат даты availableTo: {}", availableTo);
+            }
+        }
         for (Listing listing : listings) {
             if (listing.getImageUrls() != null) {
                 List<String> imageUrls = objectMapper.readValue(listing.getImageUrls(), new TypeReference<List<String>>(){});

@@ -2,17 +2,22 @@ package com.example.gottagofinal1.fragment;
 
 import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.EditText;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.appcompat.app.AlertDialog;
 import androidx.fragment.app.Fragment;
-import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import com.example.gottagofinal1.R;
 import com.example.gottagofinal1.adapter.ListingAdapter;
@@ -28,6 +33,7 @@ import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
 import retrofit2.http.GET;
 import retrofit2.http.Path;
+import retrofit2.http.Query;
 
 public class FavoritesFragment extends Fragment {
 
@@ -39,11 +45,23 @@ public class FavoritesFragment extends Fragment {
     private ImageView navHomeIcon, navFavoriteIcon, navListingsIcon, navMessagesIcon, navProfileIcon;
     private TextView navHomeText, navFavoriteText, navListingsText, navMessagesText, navProfileText;
     private ImageView settingsIcon;
+    private EditText searchInput;
     private FavoritesApi favoritesApi;
+    private String currentSearch = "";
+    private String currentCity = "";
+    private Integer currentCapacity = null;
 
     public interface FavoritesApi {
         @GET("/api/favorites/user/{userId}")
         Call<List<Listing>> getFavoritesByUserId(@Path("userId") String userId);
+
+        @GET("/api/favorites/user/{userId}/filtered")
+        Call<List<Listing>> getFilteredFavoritesByUserId(
+                @Path("userId") String userId,
+                @Query("search") String search,
+                @Query("city") String city,
+                @Query("capacity") Integer capacity
+        );
     }
 
     @Override
@@ -69,7 +87,7 @@ public class FavoritesFragment extends Fragment {
                 .build();
 
         Retrofit retrofit = new Retrofit.Builder()
-                .baseUrl("http://192.168.1.37:8080/")
+                .baseUrl("http://95.142.42.129:8080/")
                 .addConverterFactory(GsonConverterFactory.create())
                 .client(okHttpClient)
                 .build();
@@ -93,8 +111,9 @@ public class FavoritesFragment extends Fragment {
         navMessagesText = view.findViewById(R.id.nav_messages_text);
         navProfileText = view.findViewById(R.id.nav_profile_text);
         settingsIcon = view.findViewById(R.id.settings_icon);
+        searchInput = view.findViewById(R.id.search_input);
 
-        recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
+        recyclerView.setLayoutManager(new GridLayoutManager(getContext(), 2));
         listingAdapter = new ListingAdapter(new ArrayList<>());
         listingAdapter.setOnItemClickListener(listing -> {
             Log.d(TAG, "Нажато объявление с заголовком: " + listing.getTitle());
@@ -123,7 +142,27 @@ public class FavoritesFragment extends Fragment {
                 navProfileIcon, navProfileText
         );
 
-        fetchFavorites();
+        searchInput.setEnabled(true);
+        searchInput.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+                currentSearch = s.toString();
+                fetchFavorites(currentSearch, currentCity, currentCapacity);
+            }
+
+            @Override
+            public void afterTextChanged(Editable s) {}
+        });
+
+        settingsIcon.setOnClickListener(v -> {
+            Log.d(TAG, "Нажата иконка настроек!");
+            showFilterDialog();
+        });
+
+        fetchFavorites(currentSearch, currentCity, currentCapacity);
 
         return view;
     }
@@ -135,6 +174,8 @@ public class FavoritesFragment extends Fragment {
         navHomeIcon.setOnClickListener(v -> {
             Log.d(TAG, "Нажата иконка дома!");
             getParentFragmentManager()
+                    .popBackStack(null, getParentFragmentManager().POP_BACK_STACK_INCLUSIVE);
+            getParentFragmentManager()
                     .beginTransaction()
                     .setCustomAnimations(
                             R.anim.slide_in_left,
@@ -143,7 +184,6 @@ public class FavoritesFragment extends Fragment {
                             R.anim.slide_out_left
                     )
                     .replace(R.id.fragment_container, new ListingsFragment())
-                    .addToBackStack(null)
                     .commit();
         });
 
@@ -154,6 +194,8 @@ public class FavoritesFragment extends Fragment {
         navListingsIcon.setOnClickListener(v -> {
             Log.d(TAG, "Нажата иконка объявлений!");
             getParentFragmentManager()
+                    .popBackStack(null, getParentFragmentManager().POP_BACK_STACK_INCLUSIVE);
+            getParentFragmentManager()
                     .beginTransaction()
                     .setCustomAnimations(
                             R.anim.slide_in_right,
@@ -162,12 +204,15 @@ public class FavoritesFragment extends Fragment {
                             R.anim.slide_out_right
                     )
                     .replace(R.id.fragment_container, new AddListingFragment())
-                    .addToBackStack(null)
                     .commit();
         });
 
         navMessagesIcon.setOnClickListener(v -> {
             Log.d(TAG, "Нажата иконка сообщений!");
+            SharedPreferences prefs = getContext().getSharedPreferences(PREFS_NAME, getContext().MODE_PRIVATE);
+            String currentUserId = prefs.getString("user_id", null);
+            getParentFragmentManager()
+                    .popBackStack(null, getParentFragmentManager().POP_BACK_STACK_INCLUSIVE);
             getParentFragmentManager()
                     .beginTransaction()
                     .setCustomAnimations(
@@ -176,13 +221,16 @@ public class FavoritesFragment extends Fragment {
                             R.anim.slide_in_left,
                             R.anim.slide_out_right
                     )
-                    .replace(R.id.fragment_container, new ChatsFragment())
-                    .addToBackStack(null)
+                    .replace(R.id.fragment_container, ChatsFragment.newInstance(currentUserId))
                     .commit();
         });
 
         navProfileIcon.setOnClickListener(v -> {
             Log.d(TAG, "Нажата иконка профиля!");
+            SharedPreferences prefs = getContext().getSharedPreferences(PREFS_NAME, getContext().MODE_PRIVATE);
+            String currentUserId = prefs.getString("user_id", null);
+            getParentFragmentManager()
+                    .popBackStack(null, getParentFragmentManager().POP_BACK_STACK_INCLUSIVE);
             getParentFragmentManager()
                     .beginTransaction()
                     .setCustomAnimations(
@@ -191,17 +239,12 @@ public class FavoritesFragment extends Fragment {
                             R.anim.slide_in_left,
                             R.anim.slide_out_right
                     )
-                    .replace(R.id.fragment_container, new ProfileFragment())
-                    .addToBackStack(null)
+                    .replace(R.id.fragment_container, ProfileFragment.newInstance(currentUserId))
                     .commit();
-        });
-
-        settingsIcon.setOnClickListener(v -> {
-            Log.d(TAG, "Нажата иконка настроек!");
         });
     }
 
-    private void fetchFavorites() {
+    private void fetchFavorites(String search, String city, Integer capacity) {
         SharedPreferences prefs = getContext().getSharedPreferences(PREFS_NAME, getContext().MODE_PRIVATE);
         String currentUserId = prefs.getString("user_id", null);
         if (currentUserId == null) {
@@ -210,7 +253,7 @@ public class FavoritesFragment extends Fragment {
             return;
         }
 
-        favoritesApi.getFavoritesByUserId(currentUserId).enqueue(new Callback<List<Listing>>() {
+        favoritesApi.getFilteredFavoritesByUserId(currentUserId, search, city, capacity).enqueue(new Callback<List<Listing>>() {
             @Override
             public void onResponse(@NonNull Call<List<Listing>> call, @NonNull Response<List<Listing>> response) {
                 if (response.isSuccessful() && response.body() != null) {
@@ -229,5 +272,44 @@ public class FavoritesFragment extends Fragment {
                 Toast.makeText(getContext(), "Ошибка сети: " + t.getMessage(), Toast.LENGTH_SHORT).show();
             }
         });
+    }
+
+    private void showFilterDialog() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
+        builder.setTitle("Фильтры");
+
+        LinearLayout layout = new LinearLayout(getContext());
+        layout.setOrientation(LinearLayout.VERTICAL);
+
+        EditText cityInput = new EditText(getContext());
+        cityInput.setHint("Город");
+        cityInput.setText(currentCity);
+        layout.addView(cityInput);
+
+        EditText capacityInput = new EditText(getContext());
+        capacityInput.setHint("Вместимость");
+        capacityInput.setInputType(android.text.InputType.TYPE_CLASS_NUMBER);
+        if (currentCapacity != null) {
+            capacityInput.setText(String.valueOf(currentCapacity));
+        }
+        layout.addView(capacityInput);
+
+        builder.setView(layout);
+
+        builder.setPositiveButton("Применить", (dialog, which) -> {
+            currentCity = cityInput.getText().toString();
+            String capacityText = capacityInput.getText().toString();
+            try {
+                currentCapacity = capacityText.isEmpty() ? null : Integer.parseInt(capacityText);
+            } catch (NumberFormatException e) {
+                currentCapacity = null;
+                Toast.makeText(getContext(), "Вместимость должна быть числом", Toast.LENGTH_SHORT).show();
+            }
+            fetchFavorites(currentSearch, currentCity, currentCapacity);
+        });
+
+        builder.setNegativeButton("Отмена", (dialog, which) -> dialog.dismiss());
+
+        builder.show();
     }
 }

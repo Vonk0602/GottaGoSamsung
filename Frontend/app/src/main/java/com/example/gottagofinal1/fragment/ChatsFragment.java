@@ -35,7 +35,7 @@ public class ChatsFragment extends Fragment {
 
     private static final String ARG_CURRENT_USER_ID = "current_user_id";
     private static final String PREFS_NAME = "user_prefs";
-    private static final String CHATS_URL = "http://192.168.1.37:8080/api/chats/user/";
+    private static final String CHATS_URL = "http://95.142.42.129:8080/api/chats/user/";
     private RecyclerView recyclerView;
     private ChatAdapter adapter;
     private String currentUserId;

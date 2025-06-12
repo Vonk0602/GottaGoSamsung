@@ -1,6 +1,5 @@
 package com.example.gottagobackend.controller;
 
-import com.example.gottagobackend.entity.Favorite;
 import com.example.gottagobackend.entity.Listing;
 import com.example.gottagobackend.service.FavoritesService;
 import org.slf4j.Logger;
@@ -75,6 +74,29 @@ public class FavoritesController {
             return ResponseEntity.ok(favorites);
         } catch (Exception e) {
             logger.error("Ошибка при получении избранных объявлений: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+        }
+    }
+
+    @GetMapping("/user/{userId}/filtered")
+    public ResponseEntity<List<Listing>> getFilteredFavoritesByUserId(
+            @PathVariable String userId,
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) String city,
+            @RequestParam(required = false) Integer capacity,
+            @RequestParam(required = false) String availableFrom,
+            @RequestParam(required = false) String availableTo) {
+        logger.debug("Получение отфильтрованных избранных объявлений для userId: {}, search: {}, city: {}, capacity: {}, availableFrom: {}, availableTo: {}",
+                userId, search, city, capacity, availableFrom, availableTo);
+        try {
+            List<Listing> favorites = favoritesService.getFilteredFavoritesByUserId(userId, search, city, capacity, availableFrom, availableTo);
+            logger.debug("Получено {} отфильтрованных избранных объявлений", favorites.size());
+            return ResponseEntity.ok(favorites);
+        } catch (IllegalArgumentException e) {
+            logger.error("Ошибка при получении отфильтрованных избранных объявлений: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+        } catch (Exception e) {
+            logger.error("Ошибка при получении отфильтрованных избранных объявлений: {}", e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
         }
     }

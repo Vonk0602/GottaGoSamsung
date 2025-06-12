@@ -148,7 +148,7 @@ public class ListingDetailFragment extends Fragment {
                 .build();
 
         Retrofit retrofit = new Retrofit.Builder()
-                .baseUrl("http://192.168.1.37:8080/")
+                .baseUrl("http://95.142.42.129:8080/")
                 .addConverterFactory(GsonConverterFactory.create())
                 .client(okHttpClient)
                 .build();

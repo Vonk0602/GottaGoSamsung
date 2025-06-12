@@ -66,11 +66,12 @@ public class LoginFragment extends Fragment {
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         Retrofit retrofit = new Retrofit.Builder()
-                .baseUrl("http://192.168.1.37:8080/api/")
+                .baseUrl("http://95.142.42.129:8080/api/")
                 .addConverterFactory(GsonConverterFactory.create())
                 .build();
         authApi = retrofit.create(AuthApi.class);
-        Log.d(TAG, "Инициализирован Retrofit с базовым URL: http://192.168.1.37:8080/api/");
+        Log.d(TAG, "Инициализирован Retrofit с базовым URL: http://95.142.42.129:8080/api/");
+        checkSavedCredentials();
     }
 
     @Nullable
@@ -130,28 +131,23 @@ public class LoginFragment extends Fragment {
                         SharedPreferences prefs = getContext().getSharedPreferences(PREFS_NAME, getContext().MODE_PRIVATE);
                         SharedPreferences.Editor editor = prefs.edit();
                         editor.putString("user_id", loginResponse.userId);
-                        editor.putString("auth_token", loginResponse.token);
                         editor.apply();
-                        Log.d(TAG, "Сохранены userId и token в SharedPreferences: userId=" + loginResponse.userId);
+                        Log.d(TAG, "Сохранён userId в SharedPreferences: userId=" + loginResponse.userId);
                         Toast.makeText(getContext(), "Вход выполнен успешно!", Toast.LENGTH_SHORT).show();
 
-                        getParentFragmentManager()
-                                .beginTransaction()
-                                .setCustomAnimations(
-                                        R.anim.slide_in_right,
-                                        R.anim.slide_out_left,
-                                        R.anim.slide_in_left,
-                                        R.anim.slide_out_right
-                                )
-                                .replace(R.id.fragment_container, new ListingsFragment())
-                                .commit();
+                        navigateToListings();
                     } else {
-                        String errorMessage = "Ошибка входа: HTTP " + response.code() + " " + response.message();
-                        if (response.errorBody() != null) {
-                            try {
-                                errorMessage += ", " + response.errorBody().string();
-                            } catch (Exception e) {
-                                Log.e(TAG, "Ошибка чтения тела ответа: ", e);
+                        String errorMessage;
+                        if (response.code() == 401 || response.code() == 400) {
+                            errorMessage = "Неверный логин или пароль";
+                        } else {
+                            errorMessage = "Ошибка входа: HTTP " + response.code() + " " + response.message();
+                            if (response.errorBody() != null) {
+                                try {
+                                    errorMessage += ", " + response.errorBody().string();
+                                } catch (Exception e) {
+                                    Log.e(TAG, "Ошибка чтения тела ответа: ", e);
+                                }
                             }
                         }
                         Toast.makeText(getContext(), errorMessage, Toast.LENGTH_LONG).show();
@@ -244,6 +240,33 @@ public class LoginFragment extends Fragment {
             }
             return false;
         });
+    }
+
+    private void checkSavedCredentials() {
+        SharedPreferences prefs = getContext().getSharedPreferences(PREFS_NAME, getContext().MODE_PRIVATE);
+        String savedUserId = prefs.getString("user_id", null);
+
+        if (savedUserId != null) {
+            Log.d(TAG, "Найден сохранённый userId, переход к списку объявлений");
+            navigateToListings();
+        } else {
+            Log.d(TAG, "Сохранённый userId не найден");
+        }
+    }
+
+    private void navigateToListings() {
+        getParentFragmentManager()
+                .popBackStack(null, getParentFragmentManager().POP_BACK_STACK_INCLUSIVE);
+        getParentFragmentManager()
+                .beginTransaction()
+                .setCustomAnimations(
+                        R.anim.slide_in_right,
+                        R.anim.slide_out_left,
+                        R.anim.slide_in_left,
+                        R.anim.slide_out_right
+                )
+                .replace(R.id.fragment_container, new ListingsFragment())
+                .commit();
     }
 
     private void togglePasswordVisibility(EditText editText) {

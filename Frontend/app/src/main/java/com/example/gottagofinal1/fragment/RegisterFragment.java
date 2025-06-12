@@ -74,11 +74,11 @@ public class RegisterFragment extends Fragment {
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         Retrofit retrofit = new Retrofit.Builder()
-                .baseUrl("http://192.168.1.37:8080/")
+                .baseUrl("http://95.142.42.129:8080/")
                 .addConverterFactory(GsonConverterFactory.create())
                 .build();
         authApi = retrofit.create(AuthApi.class);
-        android.util.Log.d(TAG, "Ретрофит инициализирован: http://192.168.1.37:8080/");
+        android.util.Log.d(TAG, "Ретрофит инициализирован: http://95.142.42.129:8080/");
     }
 
     @Nullable

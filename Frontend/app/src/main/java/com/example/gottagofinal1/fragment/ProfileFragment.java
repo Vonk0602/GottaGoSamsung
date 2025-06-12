@@ -56,6 +56,7 @@ public class ProfileFragment extends Fragment {
     private ImageView star1, star2, star3, star4, star5;
     private ImageView backButton;
     private Button addReviewButton;
+    private ImageView menuButton;
     private ListingAdapter listingAdapter;
     private ReviewAdapter reviewAdapter;
     private boolean isListingsTabSelected = true;
@@ -126,11 +127,11 @@ public class ProfileFragment extends Fragment {
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         Retrofit retrofit = new Retrofit.Builder()
-                .baseUrl("http://192.168.1.37:8080/api/")
+                .baseUrl("http://95.142.42.129:8080/")
                 .addConverterFactory(GsonConverterFactory.create())
                 .build();
         authApi = retrofit.create(AuthApi.class);
-        Log.d(TAG, "Retrofit инициализирован с базовым URL: http://192.168.1.37:8080/api/");
+        Log.d(TAG, "Retrofit инициализирован с базовым URL: http://95.142.42.129:8080/");
     }
 
     @Nullable
@@ -164,6 +165,7 @@ public class ProfileFragment extends Fragment {
             star5 = view.findViewById(R.id.star_5);
             backButton = view.findViewById(R.id.back_button);
             addReviewButton = view.findViewById(R.id.add_review_button);
+            menuButton = view.findViewById(R.id.menu_button);
         } catch (Exception e) {
             Log.e(TAG, "Ошибка при инициализации view-элементов: " + e.getMessage(), e);
             Toast.makeText(getContext(), "Ошибка загрузки интерфейса", Toast.LENGTH_SHORT).show();
@@ -203,6 +205,7 @@ public class ProfileFragment extends Fragment {
         }
         Log.d(TAG, "Текущий currentUserId: " + currentUserId);
         addReviewButton.setVisibility(currentUserId != null && !currentUserId.equals(userId) ? View.VISIBLE : View.GONE);
+        menuButton.setVisibility(currentUserId != null && currentUserId.equals(userId) ? View.VISIBLE : View.GONE);
 
         listingAdapter = new ListingAdapter(new ArrayList<>());
         listingAdapter.setOnItemClickListener(this::openListingDetail);
@@ -240,24 +243,7 @@ public class ProfileFragment extends Fragment {
         navHomeIcon.setOnClickListener(v -> {
             Log.d(TAG, "Иконка домой нажата");
             getParentFragmentManager()
-                    .beginTransaction()
-                    .setCustomAnimations(
-                            R.anim.slide_in_left,
-                            R.anim.slide_out_right,
-                            R.anim.slide_in_right,
-                            R.anim.slide_out_left
-                    )
-                    .replace(R.id.fragment_container, new ListingsFragment())
-                    .addToBackStack(null)
-                    .commit();
-        });
-
-        navFavoriteIcon.setOnClickListener(v -> {
-            Log.d(TAG, "Иконка избранное нажата");
-        });
-
-        navListingsIcon.setOnClickListener(v -> {
-            Log.d(TAG, "Иконка объявления нажата");
+                    .popBackStack(null, getParentFragmentManager().POP_BACK_STACK_INCLUSIVE);
             getParentFragmentManager()
                     .beginTransaction()
                     .setCustomAnimations(
@@ -267,16 +253,61 @@ public class ProfileFragment extends Fragment {
                             R.anim.slide_out_left
                     )
                     .replace(R.id.fragment_container, new ListingsFragment())
-                    .addToBackStack(null)
+                    .commit();
+        });
+
+        navFavoriteIcon.setOnClickListener(v -> {
+            Log.d(TAG, "Иконка избранное нажата");
+            getParentFragmentManager()
+                    .popBackStack(null, getParentFragmentManager().POP_BACK_STACK_INCLUSIVE);
+            getParentFragmentManager()
+                    .beginTransaction()
+                    .setCustomAnimations(
+                            R.anim.slide_in_right,
+                            R.anim.slide_out_left,
+                            R.anim.slide_in_left,
+                            R.anim.slide_out_right
+                    )
+                    .replace(R.id.fragment_container, new FavoritesFragment())
+                    .commit();
+        });
+
+        navListingsIcon.setOnClickListener(v -> {
+            Log.d(TAG, "Иконка объявления нажата");
+            getParentFragmentManager()
+                    .popBackStack(null, getParentFragmentManager().POP_BACK_STACK_INCLUSIVE);
+            getParentFragmentManager()
+                    .beginTransaction()
+                    .setCustomAnimations(
+                            R.anim.slide_in_right,
+                            R.anim.slide_out_left,
+                            R.anim.slide_in_left,
+                            R.anim.slide_out_right
+                    )
+                    .replace(R.id.fragment_container, new AddListingFragment())
                     .commit();
         });
 
         navMessagesIcon.setOnClickListener(v -> {
             Log.d(TAG, "Иконка сообщения нажата");
+            SharedPreferences prefs = getContext().getSharedPreferences(PREFS_NAME, getContext().MODE_PRIVATE);
+            String currentUserId = prefs.getString("user_id", null);
+            getParentFragmentManager()
+                    .popBackStack(null, getParentFragmentManager().POP_BACK_STACK_INCLUSIVE);
+            getParentFragmentManager()
+                    .beginTransaction()
+                    .setCustomAnimations(
+                            R.anim.slide_in_right,
+                            R.anim.slide_out_left,
+                            R.anim.slide_in_left,
+                            R.anim.slide_out_right
+                    )
+                    .replace(R.id.fragment_container, ChatsFragment.newInstance(currentUserId))
+                    .commit();
         });
 
         navProfileIcon.setOnClickListener(v -> {
-            Log.d(TAG, "Иконка профиля нажата - уже в ProfileFragment");
+            Log.d(TAG, "Иконка профиля нажата");
         });
 
         tabListings.setOnClickListener(v -> {
@@ -301,6 +332,34 @@ public class ProfileFragment extends Fragment {
             Log.d(TAG, "Кнопка добавления отзыва нажата для userId: " + userId);
             showAddReviewDialog();
         });
+
+        menuButton.setOnClickListener(v -> {
+            Log.d(TAG, "Кнопка меню нажата");
+            AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
+            builder.setTitle("Меню");
+            builder.setItems(new String[]{"Редактировать", "Выйти"}, (dialog, which) -> {
+                if (which == 0) {
+                    Log.d(TAG, "Выбрано редактирование профиля");
+                    getParentFragmentManager()
+                            .popBackStack(null, getParentFragmentManager().POP_BACK_STACK_INCLUSIVE);
+                    getParentFragmentManager()
+                            .beginTransaction()
+                            .replace(R.id.fragment_container, EditProfileFragment.newInstance(currentUserId))
+                            .commit();
+                } else {
+                    Log.d(TAG, "Выбран выход из профиля");
+                    SharedPreferences prefs = getContext().getSharedPreferences(PREFS_NAME, getContext().MODE_PRIVATE);
+                    prefs.edit().clear().apply();
+                    getParentFragmentManager()
+                            .popBackStack(null, getParentFragmentManager().POP_BACK_STACK_INCLUSIVE);
+                    getParentFragmentManager()
+                            .beginTransaction()
+                            .replace(R.id.fragment_container, new LoginFragment())
+                            .commit();
+                }
+            });
+            builder.show();
+        });
     }
 
     private void fetchProfile(String userId) {
@@ -320,7 +379,7 @@ public class ProfileFragment extends Fragment {
                             .into(profileAvatar);
                     fetchAverageRating(userId);
                 } else {
-                    Log.e(TAG, "Ошибка загрузки профиля: HTTP " + response.code() + " " + response.message());
+                    Log.e(TAG, "Ошибка загрузки профиля: HTTP " + response.code());
                     profileName.setText("Пользователь");
                     profileDescription.setText("");
                     profileAvatar.setImageResource(R.drawable.placeholder_image);
@@ -330,7 +389,7 @@ public class ProfileFragment extends Fragment {
 
             @Override
             public void onFailure(@NonNull Call<LoginResponse> call, @NonNull Throwable t) {
-                Log.e(TAG, "Ошибка сети при загрузке профиля: " + t.getMessage(), t);
+                Log.e(TAG, "Ошибка сети при загрузке профиля: " + t.getMessage());
                 profileName.setText("Пользователь");
                 profileDescription.setText("");
                 profileAvatar.setImageResource(R.drawable.placeholder_image);
@@ -353,7 +412,7 @@ public class ProfileFragment extends Fragment {
                         recyclerViewContent.setAdapter(listingAdapter);
                     }
                 } else {
-                    Log.e(TAG, "Ошибка загрузки объявлений: HTTP " + response.code() + " " + response.message());
+                    Log.e(TAG, "Ошибка загрузки объявлений: HTTP " + response.code());
                     listingAdapter.updateListings(new ArrayList<>());
                     if (isListingsTabSelected) {
                         recyclerViewContent.setAdapter(listingAdapter);
@@ -364,7 +423,7 @@ public class ProfileFragment extends Fragment {
 
             @Override
             public void onFailure(@NonNull Call<List<Listing>> call, @NonNull Throwable t) {
-                Log.e(TAG, "Ошибка сети при загрузке объявлений: " + t.getMessage(), t);
+                Log.e(TAG, "Ошибка сети при загрузке объявлений: " + t.getMessage());
                 listingAdapter.updateListings(new ArrayList<>());
                 if (isListingsTabSelected) {
                     recyclerViewContent.setAdapter(listingAdapter);
@@ -387,7 +446,7 @@ public class ProfileFragment extends Fragment {
                         recyclerViewContent.setAdapter(reviewAdapter);
                     }
                 } else {
-                    Log.e(TAG, "Ошибка загрузки отзывов: HTTP " + response.code() + " " + response.message());
+                    Log.e(TAG, "Ошибка загрузки отзывов: HTTP " + response.code());
                     reviewAdapter.updateReviews(new ArrayList<>());
                     if (!isListingsTabSelected) {
                         recyclerViewContent.setAdapter(reviewAdapter);
@@ -398,7 +457,7 @@ public class ProfileFragment extends Fragment {
 
             @Override
             public void onFailure(@NonNull Call<List<Review>> call, @NonNull Throwable t) {
-                Log.e(TAG, "Ошибка сети при загрузке отзывов: " + t.getMessage(), t);
+                Log.e(TAG, "Ошибка сети при загрузке отзывов: " + t.getMessage());
                 reviewAdapter.updateReviews(new ArrayList<>());
                 if (!isListingsTabSelected) {
                     recyclerViewContent.setAdapter(reviewAdapter);
@@ -418,14 +477,14 @@ public class ProfileFragment extends Fragment {
                     Log.d(TAG, "Средний рейтинг: " + rating);
                     setRating(rating);
                 } else {
-                    Log.e(TAG, "Ошибка загрузки среднего рейтинга: HTTP " + response.code() + " " + response.message());
+                    Log.e(TAG, "Ошибка загрузки среднего рейтинга: HTTP " + response.code());
                     setRating(0);
                 }
             }
 
             @Override
             public void onFailure(@NonNull Call<Double> call, @NonNull Throwable t) {
-                Log.e(TAG, "Ошибка сети при загрузке среднего рейтинга: " + t.getMessage(), t);
+                Log.e(TAG, "Ошибка сети при загрузке среднего рейтинга: " + t.getMessage());
                 setRating(0);
             }
         });
@@ -462,14 +521,17 @@ public class ProfileFragment extends Fragment {
 
             if (reviewText.isEmpty()) {
                 reviewTextInput.setError("Введите текст отзыва");
+                Log.d(TAG, "Ошибка: пустой текст отзыва");
                 return;
             }
             if (rating == 0) {
+                Log.d(TAG, "Ошибка: рейтинг не выбран");
                 Toast.makeText(getContext(), "Выберите рейтинг", Toast.LENGTH_SHORT).show();
                 return;
             }
             if (reviewText.length() > 500) {
                 reviewTextInput.setError("Отзыв не должен превышать 500 символов");
+                Log.d(TAG, "Ошибка: отзыв слишком длинный");
                 return;
             }
 
@@ -479,6 +541,7 @@ public class ProfileFragment extends Fragment {
                 public void onResponse(@NonNull Call<Void> call, @NonNull Response<Void> response) {
                     if (response.isSuccessful()) {
                         Toast.makeText(getContext(), "Отзыв успешно добавлен", Toast.LENGTH_SHORT).show();
+                        Log.d(TAG, "Отзыв успешно добавлен для userId: " + userId);
                         fetchUserReviews(userId);
                         fetchAverageRating(userId);
                     } else {
@@ -494,7 +557,7 @@ public class ProfileFragment extends Fragment {
 
                 @Override
                 public void onFailure(@NonNull Call<Void> call, @NonNull Throwable t) {
-                    Log.e(TAG, "Ошибка сети при добавлении отзыва: " + t.getMessage(), t);
+                    Log.e(TAG, "Ошибка сети при добавлении отзыва: " + t.getMessage());
                     Toast.makeText(getContext(), "Ошибка сети", Toast.LENGTH_SHORT).show();
                     dialog.dismiss();
                 }
@@ -549,6 +612,8 @@ public class ProfileFragment extends Fragment {
     }
 
     private void redirectToLogin() {
+        getParentFragmentManager()
+                .popBackStack(null, getParentFragmentManager().POP_BACK_STACK_INCLUSIVE);
         getParentFragmentManager()
                 .beginTransaction()
                 .replace(R.id.fragment_container, new LoginFragment())

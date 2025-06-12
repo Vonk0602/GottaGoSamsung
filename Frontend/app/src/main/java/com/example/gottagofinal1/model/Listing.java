@@ -15,12 +15,13 @@ public class Listing implements Serializable {
     private Date availableTo;
     private int capacity;
     private Date createdAt;
+    private String status;
 
     public Listing() {
     }
 
     public Listing(String listingId, String userId, String title, String description, String city, String address,
-                   String imageUrls, Date availableFrom, Date availableTo, int capacity, Date createdAt) {
+                   String imageUrls, Date availableFrom, Date availableTo, int capacity, Date createdAt, String status) {
         this.listingId = listingId;
         this.userId = userId;
         this.title = title;
@@ -32,6 +33,7 @@ public class Listing implements Serializable {
         this.availableTo = availableTo;
         this.capacity = capacity;
         this.createdAt = createdAt;
+        this.status = status;
     }
 
     public String getListingId() {
@@ -120,5 +122,13 @@ public class Listing implements Serializable {
 
     public void setCreatedAt(Date createdAt) {
         this.createdAt = createdAt;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
     }
 }

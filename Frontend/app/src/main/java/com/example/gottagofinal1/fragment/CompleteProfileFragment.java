@@ -54,11 +54,11 @@ public class CompleteProfileFragment extends Fragment {
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         Retrofit retrofit = new Retrofit.Builder()
-                .baseUrl("http://192.168.1.37:8080")
+                .baseUrl("http://95.142.42.129:8080")
                 .addConverterFactory(GsonConverterFactory.create())
                 .build();
         authApi = retrofit.create(AuthApi.class);
-        Log.d(TAG, "Retrofit initialized with base URL: http://192.168.1.37:8080");
+        Log.d(TAG, "Retrofit initialized with base URL: http://95.142.42.129:8080");
 
         if (getArguments() != null) {
             userId = getArguments().getString("userId");

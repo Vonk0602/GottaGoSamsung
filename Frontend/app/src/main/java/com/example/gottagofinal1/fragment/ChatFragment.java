@@ -16,8 +16,10 @@ import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+import com.bumptech.glide.Glide;
 import com.example.gottagofinal1.R;
 import com.example.gottagofinal1.adapter.MessageAdapter;
+import com.example.gottagofinal1.model.Listing;
 import com.example.gottagofinal1.model.Message;
 import com.example.gottagofinal1.util.NavigationHelper;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -42,8 +44,8 @@ public class ChatFragment extends Fragment {
     private static final String ARG_OTHER_USER_ID = "other_user_id";
     private static final String ARG_LISTING_ID = "listing_id";
     private static final String ARG_CHAT_ID = "chat_id";
-    private static final String SERVER_URL = "http://192.168.1.37:8080/api/messages";
-    private static final String CHAT_URL = "http://192.168.1.37:8080/api/chats";
+    private static final String SERVER_URL = "http://95.142.42.129:8080/api/messages";
+    private static final String CHAT_URL = "http://95.142.42.129:8080/api/chats";
     private static final long POLLING_INTERVAL_MS = 3000;
     private RecyclerView recyclerView;
     private MessageAdapter adapter;
@@ -51,6 +53,8 @@ public class ChatFragment extends Fragment {
     private ImageView sendButton;
     private ImageView backButton;
     private TextView otherUserName;
+    private ImageView otherUserAvatar;
+    private TextView listingInfo;
     private ImageView navHomeIcon;
     private ImageView navFavoriteIcon;
     private ImageView navListingsIcon;
@@ -72,6 +76,7 @@ public class ChatFragment extends Fragment {
     private String otherUserId;
     private String chatId;
     private String listingId;
+    private Listing listing;
     private final Handler handler = new Handler(Looper.getMainLooper());
     private final Runnable pollingRunnable = new Runnable() {
         @Override
@@ -135,6 +140,8 @@ public class ChatFragment extends Fragment {
         sendButton = view.findViewById(R.id.send_button);
         backButton = view.findViewById(R.id.back_button);
         otherUserName = view.findViewById(R.id.other_user_name);
+        otherUserAvatar = view.findViewById(R.id.other_user_avatar);
+        listingInfo = view.findViewById(R.id.listing_info);
 
         navHomeIcon = view.findViewById(R.id.nav_home_icon);
         navFavoriteIcon = view.findViewById(R.id.nav_favorite_icon);
@@ -158,6 +165,11 @@ public class ChatFragment extends Fragment {
         );
 
         fetchOtherUserName();
+        if (listingId.equals("DELETED_LISTING")) {
+            listingInfo.setText("Объявление удалено");
+        } else {
+            fetchListingInfo();
+        }
         if (currentUserId != null && otherUserId != null) {
             if (chatId == null) {
                 createOrFetchChat();
@@ -196,6 +208,44 @@ public class ChatFragment extends Fragment {
         backButton.setOnClickListener(v -> {
             Log.d("ChatFragment", "Нажата кнопка назад");
             getParentFragmentManager().popBackStack();
+        });
+
+        otherUserAvatar.setOnClickListener(v -> {
+            Log.d("ChatFragment", "Нажата аватарка собеседника, переход в профиль: " + otherUserId);
+            getParentFragmentManager()
+                    .beginTransaction()
+                    .setCustomAnimations(
+                            R.anim.slide_in_right,
+                            R.anim.slide_out_left,
+                            R.anim.slide_in_left,
+                            R.anim.slide_out_right
+                    )
+                    .replace(R.id.fragment_container, ProfileFragment.newInstance(otherUserId))
+                    .addToBackStack(null)
+                    .commit();
+        });
+
+        listingInfo.setOnClickListener(v -> {
+            if (listingId.equals("DELETED_LISTING")) {
+                Log.d("ChatFragment", "Попытка клика по удалённому объявлению");
+                Toast.makeText(getContext(), "Объявление удалено", Toast.LENGTH_SHORT).show();
+            } else if (listing != null) {
+                Log.d("ChatFragment", "Переход к объявлению с ID: " + listingId);
+                getParentFragmentManager()
+                        .beginTransaction()
+                        .setCustomAnimations(
+                                R.anim.slide_in_right,
+                                R.anim.slide_out_left,
+                                R.anim.slide_in_left,
+                                R.anim.slide_out_right
+                        )
+                        .replace(R.id.fragment_container, ListingDetailFragment.newInstance(listing))
+                        .addToBackStack(null)
+                        .commit();
+            } else {
+                Log.e("ChatFragment", "Объект объявления не загружен, невозможно перейти");
+                Toast.makeText(getContext(), "Ошибка загрузки объявления", Toast.LENGTH_SHORT).show();
+            }
         });
 
         navHomeIcon.setOnClickListener(v -> {
@@ -450,29 +500,68 @@ public class ChatFragment extends Fragment {
             return;
         }
         Request request = new Request.Builder()
-                .url("http://192.168.1.37:8080/api/auth/profile/" + otherUserId)
+                .url("http://95.142.42.129:8080/api/auth/profile/" + otherUserId)
                 .addHeader("X-User-Id", currentUserId)
                 .build();
 
         client.newCall(request).enqueue(new Callback() {
             @Override
             public void onFailure(@NonNull Call call, @NonNull IOException e) {
-                Log.e("ChatFragment", "Ошибка получения имени пользователя: " + e.getMessage());
-                requireActivity().runOnUiThread(() ->
-                        otherUserName.setText("Неизвестный пользователь"));
+                Log.e("ChatFragment", "Ошибка получения профиля пользователя: " + e.getMessage());
+                requireActivity().runOnUiThread(() -> {
+                    otherUserName.setText("Неизвестный пользователь");
+                });
             }
 
             @Override
             public void onResponse(@NonNull Call call, @NonNull Response response) throws IOException {
                 if (response.isSuccessful()) {
                     String responseBody = response.body().string();
-                    ListingDetailFragment.LoginResponse profile = objectMapper.readValue(responseBody, ListingDetailFragment.LoginResponse.class);
-                    requireActivity().runOnUiThread(() ->
-                            otherUserName.setText(profile.name != null ? profile.name : "Неизвестный пользователь"));
+                    ProfileResponse profile = objectMapper.readValue(responseBody, ProfileResponse.class);
+                    requireActivity().runOnUiThread(() -> {
+                        otherUserName.setText(profile.name != null ? profile.name : "Неизвестный пользователь");
+                        if (profile.avatarUrl != null) {
+                            Glide.with(getContext()).load(profile.avatarUrl).into(otherUserAvatar);
+                        }
+                    });
                 } else {
                     Log.e("ChatFragment", "Ошибка сервера при получении профиля: HTTP " + response.code());
-                    requireActivity().runOnUiThread(() ->
-                            otherUserName.setText("Неизвестный пользователь"));
+                    requireActivity().runOnUiThread(() -> {
+                        otherUserName.setText("Неизвестный пользователь");
+                    });
+                }
+            }
+        });
+    }
+
+    private void fetchListingInfo() {
+        Request request = new Request.Builder()
+                .url("http://95.142.42.129:8080/api/listings/" + listingId)
+                .addHeader("X-User-Id", currentUserId)
+                .build();
+
+        client.newCall(request).enqueue(new Callback() {
+            @Override
+            public void onFailure(@NonNull Call call, @NonNull IOException e) {
+                Log.e("ChatFragment", "Ошибка получения информации об объявлении: " + e.getMessage());
+                requireActivity().runOnUiThread(() -> {
+                    listingInfo.setText("Объявление");
+                });
+            }
+
+            @Override
+            public void onResponse(@NonNull Call call, @NonNull Response response) throws IOException {
+                if (response.isSuccessful()) {
+                    String responseBody = response.body().string();
+                    listing = objectMapper.readValue(responseBody, Listing.class);
+                    requireActivity().runOnUiThread(() -> {
+                        listingInfo.setText(listing.getTitle() != null ? listing.getTitle() : "Объявление");
+                    });
+                } else {
+                    Log.e("ChatFragment", "Ошибка сервера при получении объявления: HTTP " + response.code());
+                    requireActivity().runOnUiThread(() -> {
+                        listingInfo.setText("Объявление");
+                    });
                 }
             }
         });
@@ -496,8 +585,9 @@ public class ChatFragment extends Fragment {
             @Override
             public void onFailure(@NonNull Call call, @NonNull IOException e) {
                 Log.e("ChatFragment", "Ошибка отправки сообщения: " + e.getMessage());
-                requireActivity().runOnUiThread(() ->
-                        Toast.makeText(getContext(), "Ошибка отправки сообщения", Toast.LENGTH_SHORT).show());
+                requireActivity().runOnUiThread(() -> {
+                    Toast.makeText(getContext(), "Ошибка отправки сообщения", Toast.LENGTH_SHORT).show();
+                });
             }
 
             @Override
@@ -505,13 +595,16 @@ public class ChatFragment extends Fragment {
                 if (response.isSuccessful()) {
                     String responseBody = response.body().string();
                     Log.d("ChatFragment", "Сообщение отправлено, ответ сервера: " + responseBody);
-                    requireActivity().runOnUiThread(() -> messageInput.setText(""));
+                    requireActivity().runOnUiThread(() -> {
+                        messageInput.setText("");
+                    });
                     fetchMessages();
                 } else {
                     String errorBody = response.body() != null ? response.body().string() : "нет ответа";
                     Log.e("ChatFragment", "Ошибка сервера при отправке сообщения: HTTP " + response.code() + ", ответ: " + errorBody);
-                    requireActivity().runOnUiThread(() ->
-                            Toast.makeText(getContext(), "Ошибка отправки сообщения: HTTP " + response.code(), Toast.LENGTH_SHORT).show());
+                    requireActivity().runOnUiThread(() -> {
+                        Toast.makeText(getContext(), "Ошибка отправки сообщения: HTTP " + response.code(), Toast.LENGTH_SHORT).show();
+                    });
                 }
             }
         });
@@ -604,5 +697,10 @@ public class ChatFragment extends Fragment {
         public void setContent(String content) {
             this.content = content;
         }
+    }
+
+    private static class ProfileResponse {
+        public String name;
+        public String avatarUrl;
     }
 }

@@ -92,18 +92,48 @@
             android:contentDescription="Настройки" />
     </LinearLayout>
 
+    <LinearLayout
+        android:id="@+id/user_info_container"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="16dp"
+        app:layout_constraintTop_toBottomOf="@id/search_bar"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <ImageView
+            android:id="@+id/other_user_avatar"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:contentDescription="Аватар пользователя"
+            android:scaleType="centerCrop" />
+
+        <TextView
+            android:id="@+id/other_user_name"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Имя пользователя"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:textColor="#000000"
+            android:layout_marginStart="8dp" />
+
+    </LinearLayout>
+
     <TextView
-        android:id="@+id/other_user_name"
+        android:id="@+id/listing_info"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Имя пользователя"
-        android:textSize="18sp"
-        android:textStyle="bold"
-        android:textColor="#000000"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/search_bar"
+        android:text="Объявление"
+        android:textSize="16sp"
+        android:textColor="#757575"
         android:layout_marginStart="16dp"
-        android:layout_marginTop="16dp" />
+        android:layout_marginTop="8dp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/user_info_container" />
 
     <TextView
         android:id="@+id/typing_indicator"
@@ -113,8 +143,8 @@
         android:textSize="14sp"
         android:textColor="#757575"
         android:visibility="gone"
-        app:layout_constraintStart_toStartOf="@id/other_user_name"
-        app:layout_constraintTop_toBottomOf="@id/other_user_name" />
+        app:layout_constraintStart_toStartOf="@id/listing_info"
+        app:layout_constraintTop_toBottomOf="@id/listing_info" />
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/recycler_view_messages"

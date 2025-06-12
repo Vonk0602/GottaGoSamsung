@@ -58,7 +58,7 @@ public class EditListingFragment extends Fragment {
     private static final String SUPABASE_URL = "https://bjksntizdqldttldegiu.supabase.co";
     private static final String SUPABASE_BUCKET = "images";
     private static final String SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJqa3NudGl6ZHFsZHR0bGRlZ2l1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDc4NDA5NTksImV4cCI6MjA2MzQxNjk1OX0.s98w7dh_Uyv3T5QJUMcTSMuhOegSaS-yd02dt94zSe8";
-    private static final String SERVER_URL = "http://192.168.1.37:8080/api/listings";
+    private static final String SERVER_URL = "http://95.142.42.129:8080/api/listings";
 
     private EditText titleInput;
     private EditText descriptionInput;

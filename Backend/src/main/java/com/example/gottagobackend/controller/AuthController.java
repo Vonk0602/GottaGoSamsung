@@ -1,12 +1,15 @@
 package com.example.gottagobackend.controller;
 
+import com.example.gottagobackend.dto.ChangePasswordRequest;
 import com.example.gottagobackend.dto.CompleteProfileRequest;
 import com.example.gottagobackend.dto.LoginRequest;
 import com.example.gottagobackend.dto.LoginResponse;
 import com.example.gottagobackend.dto.RegisterRequest;
-import com.example.gottagobackend.dto.RegisterResponse;
+import com.example.gottagobackend.dto.UpdateProfileRequest;
 import com.example.gottagobackend.entity.Profile;
+import com.example.gottagobackend.entity.UserCredentials;
 import com.example.gottagobackend.repository.ProfileRepository;
+import com.example.gottagobackend.repository.UserCredentialsRepository;
 import com.example.gottagobackend.service.AuthService;
 import jakarta.validation.Valid;
 import org.slf4j.Logger;
@@ -14,6 +17,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -24,6 +28,12 @@ public class AuthController {
 
     @Autowired
     private AuthService authService;
+
+    @Autowired
+    private UserCredentialsRepository userCredentialsRepository;
+
+    @Autowired
+    private PasswordEncoder passwordEncoder;
 
     @Autowired
     private ProfileRepository profileRepository;
@@ -45,18 +55,18 @@ public class AuthController {
     }
 
     @PostMapping("/register")
-    public ResponseEntity<RegisterResponse> register(@Valid @RequestBody RegisterRequest registerRequest) {
+    public ResponseEntity<String> register(@Valid @RequestBody RegisterRequest registerRequest) {
         logger.debug("Обработка запроса на регистрацию для email: {}", registerRequest.getEmail());
         try {
             String userId = authService.register(registerRequest);
             logger.debug("Регистрация выполнена успешно, userId: {}", userId);
-            return ResponseEntity.ok(new RegisterResponse(userId, null));
+            return ResponseEntity.status(HttpStatus.CREATED).body(userId);
         } catch (IllegalArgumentException e) {
             logger.error("Ошибка регистрации: {}", e.getMessage());
-            return ResponseEntity.badRequest().body(new RegisterResponse(null, e.getMessage()));
+            return ResponseEntity.badRequest().body(e.getMessage());
         } catch (Exception e) {
             logger.error("Неожиданная ошибка при регистрации: {}", e.getMessage(), e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new RegisterResponse(null, e.getMessage()));
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
         }
     }
 
@@ -100,6 +110,58 @@ public class AuthController {
         } catch (Exception e) {
             logger.error("Неожиданная ошибка при получении профиля: {}", e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new LoginResponse(null, null, null, e.getMessage()));
+        }
+    }
+
+    @PutMapping("/profile/{userId}")
+    public ResponseEntity<Void> updateProfile(@PathVariable String userId, @Valid @RequestBody UpdateProfileRequest request) {
+        logger.debug("Обработка запроса на обновление профиля для userId: {}", userId);
+        try {
+            Profile profile = profileRepository.findById(userId)
+                    .orElseThrow(() -> new IllegalArgumentException("Профиль не найден для user_id: " + userId));
+            if (request.getName() != null) {
+                profile.setName(request.getName());
+            }
+            if (request.getDescription() != null) {
+                profile.setDescription(request.getDescription());
+            }
+            if (request.getAvatarUrl() != null) {
+                profile.setAvatar_url(request.getAvatarUrl());
+            }
+            profileRepository.save(profile);
+            logger.debug("Профиль успешно обновлён для userId: {}", userId);
+            return ResponseEntity.ok().build();
+        } catch (IllegalArgumentException e) {
+            logger.error("Ошибка обновления профиля: {}", e.getMessage());
+            return ResponseEntity.badRequest().build();
+        } catch (Exception e) {
+            logger.error("Неожиданная ошибка при обновлении профиля: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    @PutMapping("/change-password/{userId}")
+    public ResponseEntity<Void> changePassword(@PathVariable String userId, @RequestBody ChangePasswordRequest request) {
+        logger.debug("Обработка запроса на смену пароля для userId: {}", userId);
+        try {
+            UserCredentials user = userCredentialsRepository.findById(userId)
+                    .orElseThrow(() -> new IllegalArgumentException("Пользователь не найден для user_id: " + userId));
+            if (!passwordEncoder.matches(request.getCurrentPassword(), user.getPasswordHash())) {
+                throw new IllegalArgumentException("Неверный текущий пароль");
+            }
+            if (!request.getNewPassword().equals(request.getConfirmPassword())) {
+                throw new IllegalArgumentException("Пароли не совпадают");
+            }
+            user.setPasswordHash(passwordEncoder.encode(request.getNewPassword()));
+            userCredentialsRepository.save(user);
+            logger.debug("Пароль успешно изменён для userId: {}", userId);
+            return ResponseEntity.ok().build();
+        } catch (IllegalArgumentException e) {
+            logger.error("Ошибка смены пароля: {}", e.getMessage());
+            return ResponseEntity.badRequest().build();
+        } catch (Exception e) {
+            logger.error("Неожиданная ошибка при смене пароля: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
 }

@@ -57,8 +57,8 @@ public class AddListingFragment extends Fragment {
     private static final String SUPABASE_URL = "https://bjksntizdqldttldegiu.supabase.co";
     private static final String SUPABASE_BUCKET = "images";
     private static final String SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJqa3NudGl6ZHFsZHR0bGRlZ2l1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDc4NDA5NTksImV4cCI6MjA2MzQxNjk1OX0.s98w7dh_Uyv3T5QJUMcTSMuhOegSaS-yd02dt94zSe8";
-    private static final String SERVER_URL = "http://192.168.1.37:8080/api/listings";
-    private static final String PROFILE_URL = "http://192.168.1.37:8080/api/auth/profile/";
+    private static final String SERVER_URL = "http://95.142.42.129:8080/api/listings";
+    private static final String PROFILE_URL = "http://95.142.42.129:8080/api/auth/profile/";
 
     private EditText titleInput;
     private EditText descriptionInput;
@@ -176,7 +176,21 @@ public class AddListingFragment extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
-        backButton.setOnClickListener(v -> getParentFragmentManager().popBackStack());
+        backButton.setOnClickListener(v -> {
+            Log.d(TAG, "Нажата кнопка назад");
+            getParentFragmentManager()
+                    .popBackStack(null, getParentFragmentManager().POP_BACK_STACK_INCLUSIVE);
+            getParentFragmentManager()
+                    .beginTransaction()
+                    .setCustomAnimations(
+                            R.anim.slide_in_left,
+                            R.anim.slide_out_right,
+                            R.anim.slide_in_right,
+                            R.anim.slide_out_left
+                    )
+                    .replace(R.id.fragment_container, new ListingsFragment())
+                    .commit();
+        });
 
         addButton.setOnClickListener(v -> {
             String title = titleInput.getText().toString().trim();
@@ -299,8 +313,10 @@ public class AddListingFragment extends Fragment {
         SharedPreferences.Editor editor = prefs.edit();
         editor.remove("user_id");
         editor.remove("auth_token");
+        editor.remove("email");
+        editor.remove("password");
         editor.apply();
-        Log.d(TAG, "userId и токен очищены из SharedPreferences");
+        Log.d(TAG, "userId, токен, email и password очищены из SharedPreferences");
     }
 
     private void verifyUserProfile(String userId, CallbackVerification callback) {

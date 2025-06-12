@@ -2,14 +2,20 @@ package com.example.gottagofinal1.fragment;
 
 import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.EditText;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.TextView;
+import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.appcompat.app.AlertDialog;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -17,38 +23,74 @@ import com.example.gottagofinal1.R;
 import com.example.gottagofinal1.adapter.ListingAdapter;
 import com.example.gottagofinal1.model.Listing;
 import com.example.gottagofinal1.util.NavigationHelper;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import okhttp3.Call;
-import okhttp3.Callback;
-import okhttp3.OkHttpClient;
-import okhttp3.Request;
-import okhttp3.Response;
-
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import okhttp3.OkHttpClient;
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
+import retrofit2.Retrofit;
+import retrofit2.converter.gson.GsonConverterFactory;
+import retrofit2.http.GET;
+import retrofit2.http.Query;
 
 public class ListingsFragment extends Fragment {
 
-    private static final String SERVER_URL = "http://192.168.1.37:8080/api/listings";
+    private static final String TAG = "ListingsFragment";
     private static final String PREFS_NAME = "user_prefs";
 
     private RecyclerView recyclerView;
-    private ListingAdapter adapter;
-    private ImageView navHomeIcon;
-    private ImageView navFavoriteIcon;
-    private ImageView navListingsIcon;
-    private ImageView navMessagesIcon;
-    private ImageView navProfileIcon;
-    private TextView navHomeText;
-    private TextView navFavoriteText;
-    private TextView navListingsText;
-    private TextView navMessagesText;
-    private TextView navProfileText;
+    private ListingAdapter listingAdapter;
+    private ImageView navHomeIcon, navFavoriteIcon, navListingsIcon, navMessagesIcon, navProfileIcon;
+    private TextView navHomeText, navFavoriteText, navListingsText, navMessagesText, navProfileText;
     private ImageView settingsIcon;
-    private final OkHttpClient client = new OkHttpClient();
-    private final ObjectMapper objectMapper = new ObjectMapper();
+    private EditText searchInput;
+    private ListingsApi listingsApi;
+    private String currentSearch = "";
+    private String currentCity = "";
+    private Integer currentCapacity = null;
+
+    public interface ListingsApi {
+        @GET("/api/listings")
+        Call<List<Listing>> getAllListings();
+
+        @GET("/api/listings/filtered")
+        Call<List<Listing>> getFilteredListings(
+                @Query("search") String search,
+                @Query("city") String city,
+                @Query("capacity") Integer capacity
+        );
+    }
+
+    @Override
+    public void onCreate(@Nullable Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+
+        OkHttpClient okHttpClient = new OkHttpClient.Builder()
+                .addInterceptor(chain -> {
+                    SharedPreferences prefs = requireContext().getSharedPreferences(PREFS_NAME, requireContext().MODE_PRIVATE);
+                    String token = prefs.getString("auth_token", null);
+                    if (token != null) {
+                        Log.d(TAG, "Добавлен заголовок Authorization с токеном");
+                        return chain.proceed(
+                                chain.request().newBuilder()
+                                        .addHeader("Authorization", "Bearer " + token)
+                                        .build()
+                        );
+                    } else {
+                        Log.w(TAG, "Токен не найден в SharedPreferences");
+                    }
+                    return chain.proceed(chain.request());
+                })
+                .build();
+
+        Retrofit retrofit = new Retrofit.Builder()
+                .baseUrl("http://95.142.42.129:8080/")
+                .addConverterFactory(GsonConverterFactory.create())
+                .client(okHttpClient)
+                .build();
+        listingsApi = retrofit.create(ListingsApi.class);
+    }
 
     @Nullable
     @Override
@@ -56,12 +98,6 @@ public class ListingsFragment extends Fragment {
         View view = inflater.inflate(R.layout.fragment_listings, container, false);
 
         recyclerView = view.findViewById(R.id.recycler_view_listings);
-        recyclerView.setLayoutManager(new GridLayoutManager(getContext(), 2));
-
-        adapter = new ListingAdapter(new ArrayList<>());
-        adapter.setOnItemClickListener(this::openListingDetail);
-        recyclerView.setAdapter(adapter);
-
         navHomeIcon = view.findViewById(R.id.nav_home_icon);
         navFavoriteIcon = view.findViewById(R.id.nav_favorite_icon);
         navListingsIcon = view.findViewById(R.id.add_listing_button);
@@ -73,6 +109,26 @@ public class ListingsFragment extends Fragment {
         navMessagesText = view.findViewById(R.id.nav_messages_text);
         navProfileText = view.findViewById(R.id.nav_profile_text);
         settingsIcon = view.findViewById(R.id.settings_icon);
+        searchInput = view.findViewById(R.id.search_input);
+
+        recyclerView.setLayoutManager(new GridLayoutManager(getContext(), 2));
+        listingAdapter = new ListingAdapter(new ArrayList<>());
+        listingAdapter.setOnItemClickListener(listing -> {
+            Log.d(TAG, "Нажато объявление с заголовком: " + listing.getTitle());
+            ListingDetailFragment detailFragment = ListingDetailFragment.newInstance(listing);
+            getParentFragmentManager()
+                    .beginTransaction()
+                    .setCustomAnimations(
+                            R.anim.slide_in_right,
+                            R.anim.slide_out_left,
+                            R.anim.slide_in_left,
+                            R.anim.slide_out_right
+                    )
+                    .replace(R.id.fragment_container, detailFragment)
+                    .addToBackStack(null)
+                    .commit();
+        });
+        recyclerView.setAdapter(listingAdapter);
 
         NavigationHelper.updateNavigationStyles(
                 getContext(),
@@ -84,46 +140,29 @@ public class ListingsFragment extends Fragment {
                 navProfileIcon, navProfileText
         );
 
-        fetchListings();
+        searchInput.setEnabled(true);
+        searchInput.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+                currentSearch = s.toString();
+                fetchListings(currentSearch, currentCity, currentCapacity);
+            }
+
+            @Override
+            public void afterTextChanged(Editable s) {}
+        });
+
+        settingsIcon.setOnClickListener(v -> {
+            Log.d(TAG, "Нажата иконка настроек!");
+            showFilterDialog();
+        });
+
+        fetchListings(currentSearch, currentCity, currentCapacity);
 
         return view;
-    }
-
-    private void fetchListings() {
-        SharedPreferences prefs = getContext().getSharedPreferences(PREFS_NAME, getContext().MODE_PRIVATE);
-        String token = prefs.getString("auth_token", null);
-        Request.Builder requestBuilder = new Request.Builder()
-                .url(SERVER_URL);
-        if (token != null) {
-            requestBuilder.addHeader("Authorization", "Bearer " + token);
-            Log.d("ListingsFragment", "Добавлен заголовок Authorization с токеном");
-        } else {
-            Log.w("ListingsFragment", "Токен не найден в SharedPreferences");
-        }
-        Request request = requestBuilder.build();
-
-        client.newCall(request).enqueue(new Callback() {
-            @Override
-            public void onFailure(@NonNull Call call, @NonNull IOException e) {
-                Log.e("ListingsFragment", "Ошибка получения объявлений: " + e.getMessage(), e);
-                requireActivity().runOnUiThread(() ->
-                        adapter.updateListings(new ArrayList<>()));
-            }
-
-            @Override
-            public void onResponse(@NonNull Call call, @NonNull Response response) throws IOException {
-                if (response.isSuccessful()) {
-                    String responseBody = response.body().string();
-                    List<Listing> listings = objectMapper.readValue(responseBody, new TypeReference<List<Listing>>(){});
-                    requireActivity().runOnUiThread(() ->
-                            adapter.updateListings(listings));
-                } else {
-                    Log.e("ListingsFragment", "Ошибка сервера: HTTP " + response.code() + " " + response.message());
-                    requireActivity().runOnUiThread(() ->
-                            adapter.updateListings(new ArrayList<>()));
-                }
-            }
-        });
     }
 
     @Override
@@ -131,11 +170,13 @@ public class ListingsFragment extends Fragment {
         super.onViewCreated(view, savedInstanceState);
 
         navHomeIcon.setOnClickListener(v -> {
-            Log.d("ListingsFragment", "Нажата иконка дома!");
+            Log.d(TAG, "Нажата иконка дома!");
         });
 
         navFavoriteIcon.setOnClickListener(v -> {
-            Log.d("ListingsFragment", "Нажата иконка избранного!");
+            Log.d(TAG, "Нажата иконка избранного!");
+            getParentFragmentManager()
+                    .popBackStack(null, getParentFragmentManager().POP_BACK_STACK_INCLUSIVE);
             getParentFragmentManager()
                     .beginTransaction()
                     .setCustomAnimations(
@@ -145,12 +186,13 @@ public class ListingsFragment extends Fragment {
                             R.anim.slide_out_right
                     )
                     .replace(R.id.fragment_container, new FavoritesFragment())
-                    .addToBackStack(null)
                     .commit();
         });
 
         navListingsIcon.setOnClickListener(v -> {
-            Log.d("ListingsFragment", "Нажата кнопка добавления объявления!");
+            Log.d(TAG, "Нажата иконка объявлений!");
+            getParentFragmentManager()
+                    .popBackStack(null, getParentFragmentManager().POP_BACK_STACK_INCLUSIVE);
             getParentFragmentManager()
                     .beginTransaction()
                     .setCustomAnimations(
@@ -160,12 +202,15 @@ public class ListingsFragment extends Fragment {
                             R.anim.slide_out_right
                     )
                     .replace(R.id.fragment_container, new AddListingFragment())
-                    .addToBackStack(null)
                     .commit();
         });
 
         navMessagesIcon.setOnClickListener(v -> {
-            Log.d("ListingsFragment", "Нажата иконка сообщений!");
+            Log.d(TAG, "Нажата иконка сообщений!");
+            SharedPreferences prefs = getContext().getSharedPreferences(PREFS_NAME, getContext().MODE_PRIVATE);
+            String currentUserId = prefs.getString("user_id", null);
+            getParentFragmentManager()
+                    .popBackStack(null, getParentFragmentManager().POP_BACK_STACK_INCLUSIVE);
             getParentFragmentManager()
                     .beginTransaction()
                     .setCustomAnimations(
@@ -174,13 +219,16 @@ public class ListingsFragment extends Fragment {
                             R.anim.slide_in_left,
                             R.anim.slide_out_right
                     )
-                    .replace(R.id.fragment_container, new ChatsFragment())
-                    .addToBackStack(null)
+                    .replace(R.id.fragment_container, ChatsFragment.newInstance(currentUserId))
                     .commit();
         });
 
         navProfileIcon.setOnClickListener(v -> {
-            Log.d("ListingsFragment", "Нажата иконка профиля!");
+            Log.d(TAG, "Нажата иконка профиля!");
+            SharedPreferences prefs = getContext().getSharedPreferences(PREFS_NAME, getContext().MODE_PRIVATE);
+            String currentUserId = prefs.getString("user_id", null);
+            getParentFragmentManager()
+                    .popBackStack(null, getParentFragmentManager().POP_BACK_STACK_INCLUSIVE);
             getParentFragmentManager()
                     .beginTransaction()
                     .setCustomAnimations(
@@ -189,32 +237,69 @@ public class ListingsFragment extends Fragment {
                             R.anim.slide_in_left,
                             R.anim.slide_out_right
                     )
-                    .replace(R.id.fragment_container, new ProfileFragment())
-                    .addToBackStack(null)
+                    .replace(R.id.fragment_container, ProfileFragment.newInstance(currentUserId))
                     .commit();
-        });
-
-        settingsIcon.setOnClickListener(v -> {
-            Log.d("ListingsFragment", "Нажата иконка настроек!");
         });
     }
 
-    private void openListingDetail(Listing listing) {
-        if (listing == null) {
-            Log.e("ListingsFragment", "Попытка открыть ListingDetailFragment с null Listing!");
-            return;
+    private void fetchListings(String search, String city, Integer capacity) {
+        listingsApi.getFilteredListings(search, city, capacity).enqueue(new Callback<List<Listing>>() {
+            @Override
+            public void onResponse(@NonNull Call<List<Listing>> call, @NonNull Response<List<Listing>> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    List<Listing> listings = response.body();
+                    listingAdapter.updateListings(listings);
+                    Log.d(TAG, "Загружено объявлений: " + listings.size());
+                } else {
+                    Log.e(TAG, "Ошибка загрузки объявлений: HTTP " + response.code());
+                    Toast.makeText(getContext(), "Ошибка загрузки объявлений", Toast.LENGTH_SHORT).show();
+                }
+            }
+
+            @Override
+            public void onFailure(@NonNull Call<List<Listing>> call, @NonNull Throwable t) {
+                Log.e(TAG, "Ошибка сети при загрузке объявлений: " + t.getMessage(), t);
+                Toast.makeText(getContext(), "Ошибка сети: " + t.getMessage(), Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
+
+    private void showFilterDialog() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
+        builder.setTitle("Фильтры");
+
+        LinearLayout layout = new LinearLayout(getContext());
+        layout.setOrientation(LinearLayout.VERTICAL);
+
+        EditText cityInput = new EditText(getContext());
+        cityInput.setHint("Город");
+        cityInput.setText(currentCity);
+        layout.addView(cityInput);
+
+        EditText capacityInput = new EditText(getContext());
+        capacityInput.setHint("Вместимость");
+        capacityInput.setInputType(android.text.InputType.TYPE_CLASS_NUMBER);
+        if (currentCapacity != null) {
+            capacityInput.setText(String.valueOf(currentCapacity));
         }
-        Log.d("ListingsFragment", "Открытие ListingDetailFragment для объявления: " + listing.getTitle());
-        getParentFragmentManager()
-                .beginTransaction()
-                .setCustomAnimations(
-                        R.anim.slide_in_right,
-                        R.anim.slide_out_left,
-                        R.anim.slide_in_left,
-                        R.anim.slide_out_right
-                )
-                .replace(R.id.fragment_container, ListingDetailFragment.newInstance(listing))
-                .addToBackStack(null)
-                .commit();
+        layout.addView(capacityInput);
+
+        builder.setView(layout);
+
+        builder.setPositiveButton("Применить", (dialog, which) -> {
+            currentCity = cityInput.getText().toString();
+            String capacityText = capacityInput.getText().toString();
+            try {
+                currentCapacity = capacityText.isEmpty() ? null : Integer.parseInt(capacityText);
+            } catch (NumberFormatException e) {
+                currentCapacity = null;
+                Toast.makeText(getContext(), "Вместимость должна быть числом", Toast.LENGTH_SHORT).show();
+            }
+            fetchListings(currentSearch, currentCity, currentCapacity);
+        });
+
+        builder.setNegativeButton("Отмена", (dialog, which) -> dialog.dismiss());
+
+        builder.show();
     }
 }
