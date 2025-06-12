@@ -1,9 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:tools="http://schemas.android.com/tools">
-    <!-- Base application theme. -->
-    <style name="Base.Theme.GottaGoFinal1" parent="Theme.Material3.DayNight.NoActionBar">
-        <!-- Customize your light theme here. -->
-        <!-- <item name="colorPrimary">@color/my_light_primary</item> -->
+    <style name="Theme.GottaGoFinal1" parent="Theme.Material3.Light.NoActionBar">
+        <item name="colorPrimary">#1976D2</item>
+        <item name="colorPrimaryVariant">#1565C0</item>
+        <item name="colorOnPrimary">#FFFFFF</item>
+        <item name="colorSecondary">#32CD32</item>
+        <item name="colorSecondaryVariant">#2E7D32</item>
+        <item name="colorOnSecondary">#FFFFFF</item>
+        <item name="android:statusBarColor">#FFFFFF</item>
+        <item name="android:windowLightStatusBar">true</item>
+        <item name="android:windowBackground">#FFFFFF</item>
+        <item name="android:forceDarkAllowed">false</item>
+        <item name="android:textColorPrimary">#212121</item>
+        <item name="android:textColorSecondary">#616161</item>
+        <item name="android:textColorHint">#757575</item>
+        <item name="colorSurface">#FFFFFF</item>
+        <item name="colorOnSurface">#212121</item>
+        <item name="colorOnBackground">#212121</item>
+        <item name="editTextBackground">@android:color/white</item>
+        <item name="textInputFilledStyle">@style/Widget.Material3.TextInputLayout.FilledBox</item>
+        <item name="textInputOutlinedStyle">@style/Widget.Material3.TextInputLayout.OutlinedBox</item>
     </style>
 
-    <style name="Theme.GottaGoFinal1" parent="Base.Theme.GottaGoFinal1" />
+    <style name="Widget.Material3.TextInputLayout.FilledBox" parent="Widget.Material3.TextInputLayout.FilledBox" tools:ignore="ResourceCycle">
+        <item name="boxBackgroundColor">#FFFFFF</item>
+        <item name="boxStrokeColor">#1976D2</item>
+        <item name="hintTextColor">#757575</item>
+        <item name="android:textColor">#212121</item>
+    </style>
+
+    <style name="Widget.Material3.TextInputLayout.OutlinedBox" parent="Widget.Material3.TextInputLayout.OutlinedBox" tools:ignore="ResourceCycle">
+        <item name="boxBackgroundColor">#FFFFFF</item>
+        <item name="boxStrokeColor">#1976D2</item>
+        <item name="hintTextColor">#757575</item>
+        <item name="android:textColor">#212121</item>
+    </style>
 </resources>

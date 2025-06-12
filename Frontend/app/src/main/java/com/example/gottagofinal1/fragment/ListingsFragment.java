@@ -259,7 +259,7 @@ public class ListingsFragment extends Fragment {
             @Override
             public void onFailure(@NonNull Call<List<Listing>> call, @NonNull Throwable t) {
                 Log.e(TAG, "Ошибка сети при загрузке объявлений: " + t.getMessage(), t);
-                Toast.makeText(getContext(), "Ошибка сети: " + t.getMessage(), Toast.LENGTH_SHORT).show();
+                Toast.makeText(getContext(), "Ошибка сети", Toast.LENGTH_SHORT).show();
             }
         });
     }

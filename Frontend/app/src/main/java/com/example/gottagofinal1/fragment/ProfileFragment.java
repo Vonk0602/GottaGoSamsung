@@ -394,7 +394,7 @@ public class ProfileFragment extends Fragment {
                 profileDescription.setText("");
                 profileAvatar.setImageResource(R.drawable.placeholder_image);
                 setRating(0);
-                Toast.makeText(getContext(), "Ошибка сети: " + t.getMessage(), Toast.LENGTH_SHORT).show();
+                Toast.makeText(getContext(), "Ошибка сети: ", Toast.LENGTH_SHORT).show();
             }
         });
     }

@@ -158,7 +158,7 @@ public class LoginFragment extends Fragment {
                 @Override
                 public void onFailure(@NonNull Call<LoginResponse> call, @NonNull Throwable t) {
                     loginButton.setEnabled(true);
-                    String errorMessage = "Ошибка сети: " + t.getMessage();
+                    String errorMessage = "Ошибка сети";
                     Toast.makeText(getContext(), errorMessage, Toast.LENGTH_LONG).show();
                     Log.e(TAG, errorMessage, t);
                 }
